@@ -26,8 +26,8 @@ class PartidosSeleccionadosControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @SuppressWarnings("deprecation")
     @MockBean
+    @SuppressWarnings("removal")
     private PartidosSeleccionadosService partidosSeleccionadosService;
 
     private PartidosSeleccionadosDTO partidosSeleccionadosDTO;

@@ -32,8 +32,8 @@ class ParticipanteControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @SuppressWarnings("deprecation")
     @MockBean
+    @SuppressWarnings("removal")
     private ParticipanteService participanteService;
 
     @Autowired
@@ -60,6 +60,7 @@ class ParticipanteControllerTest {
     }
 
     @Test
+    @SuppressWarnings("null")
     void inscribirseAPartido_WithValidData_ShouldReturnCreated() throws Exception {
         when(participanteService.inscribirseAPartido(eq(1L), any(ParticipanteDTO.class)))
                 .thenReturn(participanteResponse);
@@ -75,6 +76,7 @@ class ParticipanteControllerTest {
     }
 
     @Test
+    @SuppressWarnings("null")
     void inscribirseAPartido_WithInvalidPartidoId_ShouldReturnInternalServerError() throws Exception {
         String jsonContent = objectMapper.writeValueAsString(participanteDTO);
         // Spring devuelve 500 cuando no puede convertir el path variable a Long

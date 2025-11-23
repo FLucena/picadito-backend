@@ -14,7 +14,7 @@ import com.techlab.picadito.model.Participante;
 import com.techlab.picadito.model.Sede;
 import com.techlab.picadito.repository.PartidoRepository;
 import com.techlab.picadito.repository.SedeRepository;
-import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,10 +60,20 @@ public class PartidoService {
         return convertirADTO(partido);
     }
 
+    @SuppressWarnings("null")
     public PartidoResponseDTO crearPartido(PartidoDTO partidoDTO) {
         logger.info("Creando nuevo partido: {} por {}", partidoDTO.getTitulo(), partidoDTO.getCreadorNombre());
         validarFechaFutura(partidoDTO.getFechaHora());
 
+        Partido partido = crearEntidadPartido(partidoDTO);
+        asignarSedeSiExiste(partido, partidoDTO.getSedeId());
+
+        partido = partidoRepository.save(partido);
+        logger.info("Partido creado exitosamente con id: {}", partido.getId());
+        return convertirADTO(partido);
+    }
+    
+    private Partido crearEntidadPartido(PartidoDTO partidoDTO) {
         Partido partido = new Partido();
         partido.setTitulo(partidoDTO.getTitulo());
         partido.setDescripcion(partidoDTO.getDescripcion());
@@ -74,25 +84,33 @@ public class PartidoService {
         partido.setPrecio(partidoDTO.getPrecio());
         partido.setImagenUrl(partidoDTO.getImagenUrl());
         partido.setEstado(EstadoPartido.DISPONIBLE);
-
-        // Asignar sede si se proporciona sedeId
-        Long sedeId = partidoDTO.getSedeId();
+        return partido;
+    }
+    
+    private void asignarSedeSiExiste(Partido partido, Long sedeId) {
         if (sedeId != null) {
             Sede sede = sedeRepository.findById(sedeId)
                     .orElseThrow(() -> new ResourceNotFoundException("Sede no encontrada con id: " + sedeId));
             partido.setSede(sede);
         }
-
-        partido = partidoRepository.save(partido);
-        logger.info("Partido creado exitosamente con id: {}", partido.getId());
-        return convertirADTO(partido);
     }
 
+    @SuppressWarnings("null")
     public PartidoResponseDTO actualizarPartido(@NonNull Long id, PartidoDTO partidoDTO) {
         logger.info("Actualizando partido con id: {}", id);
         Partido partido = partidoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Partido no encontrado con id: " + id));
 
+        validarActualizacionPartido(partido, partidoDTO);
+        aplicarActualizaciones(partido, partidoDTO);
+
+        partido = partidoRepository.save(partido);
+        actualizarEstadoSegunParticipantes(partido);
+        logger.info("Partido actualizado exitosamente");
+        return convertirADTO(partido);
+    }
+    
+    private void validarActualizacionPartido(Partido partido, PartidoDTO partidoDTO) {
         // Validar que el partido no esté finalizado o cancelado
         if (partido.getEstado() == EstadoPartido.FINALIZADO || partido.getEstado() == EstadoPartido.CANCELADO) {
             throw new BusinessException("No se puede actualizar un partido que está " + partido.getEstado().name().toLowerCase());
@@ -101,7 +119,15 @@ public class PartidoService {
         if (partidoDTO.getFechaHora() != null) {
             validarFechaFutura(partidoDTO.getFechaHora());
         }
-
+        
+        // Validar que no se reduzca el número máximo de jugadores por debajo de la cantidad actual
+        if (partidoDTO.getMaxJugadores() != null && 
+            partidoDTO.getMaxJugadores() < partido.getCantidadParticipantes()) {
+            throw new BusinessException("No se puede reducir el número máximo de jugadores por debajo de la cantidad actual de participantes");
+        }
+    }
+    
+    private void aplicarActualizaciones(Partido partido, PartidoDTO partidoDTO) {
         if (partidoDTO.getTitulo() != null) {
             partido.setTitulo(partidoDTO.getTitulo());
         }
@@ -114,19 +140,10 @@ public class PartidoService {
         if (partidoDTO.getUbicacion() != null) {
             partido.setUbicacion(partidoDTO.getUbicacion());
         }
-        Long sedeId = partidoDTO.getSedeId();
-        if (sedeId != null) {
-            Sede sede = sedeRepository.findById(sedeId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Sede no encontrada con id: " + sedeId));
-            partido.setSede(sede);
-        } else if (sedeId == null && partido.getSede() != null) {
-            // Si se envía null explícitamente, remover la sede
-            partido.setSede(null);
-        }
+        
+        actualizarSede(partido, partidoDTO.getSedeId());
+        
         if (partidoDTO.getMaxJugadores() != null) {
-            if (partidoDTO.getMaxJugadores() < partido.getCantidadParticipantes()) {
-                throw new BusinessException("No se puede reducir el número máximo de jugadores por debajo de la cantidad actual de participantes");
-            }
             partido.setMaxJugadores(partidoDTO.getMaxJugadores());
         }
         if (partidoDTO.getPrecio() != null) {
@@ -135,11 +152,17 @@ public class PartidoService {
         if (partidoDTO.getImagenUrl() != null) {
             partido.setImagenUrl(partidoDTO.getImagenUrl());
         }
-
-        partido = partidoRepository.save(partido);
-        actualizarEstadoSegunParticipantes(partido);
-        logger.info("Partido actualizado exitosamente");
-        return convertirADTO(partido);
+    }
+    
+    private void actualizarSede(Partido partido, Long sedeId) {
+        if (sedeId != null) {
+            Sede sede = sedeRepository.findById(sedeId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Sede no encontrada con id: " + sedeId));
+            partido.setSede(sede);
+        } else if (sedeId == null && partido.getSede() != null) {
+            // Si se envía null explícitamente, remover la sede
+            partido.setSede(null);
+        }
     }
 
     public void eliminarPartido(@NonNull Long id) {
@@ -207,77 +230,92 @@ public class PartidoService {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            // Búsqueda por título (case-insensitive, contiene)
-            if (busqueda.getTitulo() != null && !busqueda.getTitulo().trim().isEmpty()) {
-                predicates.add(cb.like(
-                    cb.lower(root.get("titulo")),
-                    "%" + busqueda.getTitulo().toLowerCase() + "%"
-                ));
-            }
-
-            // Búsqueda por ubicación (case-insensitive, contiene)
-            if (busqueda.getUbicacion() != null && !busqueda.getUbicacion().trim().isEmpty()) {
-                predicates.add(cb.like(
-                    cb.lower(root.get("ubicacion")),
-                    "%" + busqueda.getUbicacion().toLowerCase() + "%"
-                ));
-            }
-
-            // Búsqueda por creador (case-insensitive, contiene)
-            if (busqueda.getCreadorNombre() != null && !busqueda.getCreadorNombre().trim().isEmpty()) {
-                predicates.add(cb.like(
-                    cb.lower(root.get("creadorNombre")),
-                    "%" + busqueda.getCreadorNombre().toLowerCase() + "%"
-                ));
-            }
-
-            // Filtro por estado
-            if (busqueda.getEstado() != null) {
-                predicates.add(cb.equal(root.get("estado"), busqueda.getEstado()));
-            }
-
-            // Filtro por fecha desde
-            if (busqueda.getFechaDesde() != null) {
-                predicates.add(cb.greaterThanOrEqualTo(root.get("fechaHora"), busqueda.getFechaDesde()));
-            }
-
-            // Filtro por fecha hasta
-            if (busqueda.getFechaHasta() != null) {
-                predicates.add(cb.lessThanOrEqualTo(root.get("fechaHora"), busqueda.getFechaHasta()));
-            }
-
-            // Filtro por mínimo de jugadores
-            if (busqueda.getMinJugadores() != null) {
-                predicates.add(cb.greaterThanOrEqualTo(root.get("maxJugadores"), busqueda.getMinJugadores()));
-            }
-
-            // Filtro por máximo de jugadores
-            if (busqueda.getMaxJugadores() != null) {
-                predicates.add(cb.lessThanOrEqualTo(root.get("maxJugadores"), busqueda.getMaxJugadores()));
-            }
-
-            // Filtro por cupos disponibles mínimos
-            if (busqueda.getCuposDisponiblesMin() != null) {
-                // Cupos disponibles = maxJugadores - cantidadParticipantes
-                predicates.add(cb.greaterThanOrEqualTo(
-                    cb.diff(root.get("maxJugadores"), 
-                        cb.size(root.get("participantes"))),
-                    busqueda.getCuposDisponiblesMin()
-                ));
-            }
-
-            // Solo disponibles
-            if (Boolean.TRUE.equals(busqueda.getSoloDisponibles())) {
-                predicates.add(cb.equal(root.get("estado"), EstadoPartido.DISPONIBLE));
-            }
-
-            // Ordenar por fecha ascendente
-            if (query != null) {
-                query.orderBy(cb.asc(root.get("fechaHora")));
-            }
+            agregarFiltroTitulo(predicates, busqueda, root, cb);
+            agregarFiltroUbicacion(predicates, busqueda, root, cb);
+            agregarFiltroCreador(predicates, busqueda, root, cb);
+            agregarFiltroEstado(predicates, busqueda, root, cb);
+            agregarFiltrosFecha(predicates, busqueda, root, cb);
+            agregarFiltrosJugadores(predicates, busqueda, root, cb);
+            agregarFiltroCuposDisponibles(predicates, busqueda, root, cb);
+            agregarFiltroSoloDisponibles(predicates, busqueda, root, cb);
+            aplicarOrdenamiento(query, root, cb);
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };
+    }
+    
+    private void agregarFiltroTitulo(List<Predicate> predicates, BusquedaPartidoDTO busqueda, Root<Partido> root, CriteriaBuilder cb) {
+        if (busqueda.getTitulo() != null && !busqueda.getTitulo().trim().isEmpty()) {
+            predicates.add(cb.like(
+                cb.lower(root.get("titulo")),
+                "%" + busqueda.getTitulo().toLowerCase() + "%"
+            ));
+        }
+    }
+    
+    private void agregarFiltroUbicacion(List<Predicate> predicates, BusquedaPartidoDTO busqueda, Root<Partido> root, CriteriaBuilder cb) {
+        if (busqueda.getUbicacion() != null && !busqueda.getUbicacion().trim().isEmpty()) {
+            predicates.add(cb.like(
+                cb.lower(root.get("ubicacion")),
+                "%" + busqueda.getUbicacion().toLowerCase() + "%"
+            ));
+        }
+    }
+    
+    private void agregarFiltroCreador(List<Predicate> predicates, BusquedaPartidoDTO busqueda, Root<Partido> root, CriteriaBuilder cb) {
+        if (busqueda.getCreadorNombre() != null && !busqueda.getCreadorNombre().trim().isEmpty()) {
+            predicates.add(cb.like(
+                cb.lower(root.get("creadorNombre")),
+                "%" + busqueda.getCreadorNombre().toLowerCase() + "%"
+            ));
+        }
+    }
+    
+    private void agregarFiltroEstado(List<Predicate> predicates, BusquedaPartidoDTO busqueda, Root<Partido> root, CriteriaBuilder cb) {
+        if (busqueda.getEstado() != null) {
+            predicates.add(cb.equal(root.get("estado"), busqueda.getEstado()));
+        }
+    }
+    
+    private void agregarFiltrosFecha(List<Predicate> predicates, BusquedaPartidoDTO busqueda, Root<Partido> root, CriteriaBuilder cb) {
+        if (busqueda.getFechaDesde() != null) {
+            predicates.add(cb.greaterThanOrEqualTo(root.get("fechaHora"), busqueda.getFechaDesde()));
+        }
+        if (busqueda.getFechaHasta() != null) {
+            predicates.add(cb.lessThanOrEqualTo(root.get("fechaHora"), busqueda.getFechaHasta()));
+        }
+    }
+    
+    private void agregarFiltrosJugadores(List<Predicate> predicates, BusquedaPartidoDTO busqueda, Root<Partido> root, CriteriaBuilder cb) {
+        if (busqueda.getMinJugadores() != null) {
+            predicates.add(cb.greaterThanOrEqualTo(root.get("maxJugadores"), busqueda.getMinJugadores()));
+        }
+        if (busqueda.getMaxJugadores() != null) {
+            predicates.add(cb.lessThanOrEqualTo(root.get("maxJugadores"), busqueda.getMaxJugadores()));
+        }
+    }
+    
+    private void agregarFiltroCuposDisponibles(List<Predicate> predicates, BusquedaPartidoDTO busqueda, Root<Partido> root, CriteriaBuilder cb) {
+        if (busqueda.getCuposDisponiblesMin() != null) {
+            // Cupos disponibles = maxJugadores - cantidadParticipantes
+            predicates.add(cb.greaterThanOrEqualTo(
+                cb.diff(root.get("maxJugadores"), 
+                    cb.size(root.get("participantes"))),
+                busqueda.getCuposDisponiblesMin()
+            ));
+        }
+    }
+    
+    private void agregarFiltroSoloDisponibles(List<Predicate> predicates, BusquedaPartidoDTO busqueda, Root<Partido> root, CriteriaBuilder cb) {
+        if (Boolean.TRUE.equals(busqueda.getSoloDisponibles())) {
+            predicates.add(cb.equal(root.get("estado"), EstadoPartido.DISPONIBLE));
+        }
+    }
+    
+    private void aplicarOrdenamiento(CriteriaQuery<?> query, Root<Partido> root, CriteriaBuilder cb) {
+        if (query != null) {
+            query.orderBy(cb.asc(root.get("fechaHora")));
+        }
     }
 
     private void validarFechaFutura(LocalDateTime fechaHora) {
@@ -287,6 +325,13 @@ public class PartidoService {
     }
 
     private PartidoResponseDTO convertirADTO(Partido partido) {
+        PartidoResponseDTO dto = mapearCamposBasicos(partido);
+        asignarSedeADTO(dto, partido);
+        asignarParticipantesADTO(dto, partido);
+        return dto;
+    }
+    
+    private PartidoResponseDTO mapearCamposBasicos(Partido partido) {
         PartidoResponseDTO dto = new PartidoResponseDTO();
         dto.setId(partido.getId());
         dto.setTitulo(partido.getTitulo());
@@ -300,24 +345,30 @@ public class PartidoService {
         dto.setCantidadParticipantes(partido.getCantidadParticipantes());
         dto.setPrecio(partido.getPrecio());
         dto.setImagenUrl(partido.getImagenUrl());
-
-        // Incluir información de sede si existe
+        return dto;
+    }
+    
+    private void asignarSedeADTO(PartidoResponseDTO dto, Partido partido) {
         if (partido.getSede() != null) {
             dto.setSedeId(partido.getSede().getId());
-            SedeResponseDTO sedeDTO = new SedeResponseDTO();
-            sedeDTO.setId(partido.getSede().getId());
-            sedeDTO.setNombre(partido.getSede().getNombre());
-            sedeDTO.setDireccion(partido.getSede().getDireccion());
-            sedeDTO.setDescripcion(partido.getSede().getDescripcion());
-            sedeDTO.setTelefono(partido.getSede().getTelefono());
-            sedeDTO.setCoordenadas(partido.getSede().getCoordenadas());
-            sedeDTO.setFechaCreacion(partido.getSede().getFechaCreacion());
-            sedeDTO.setFechaActualizacion(partido.getSede().getFechaActualizacion());
-            dto.setSede(sedeDTO);
+            dto.setSede(convertirSedeADTO(partido.getSede()));
         }
-
-        // Eager fetch para evitar N+1 queries - los participantes ya están cargados
-        // Si no están cargados, usar fetch join en el repositorio
+    }
+    
+    private SedeResponseDTO convertirSedeADTO(Sede sede) {
+        SedeResponseDTO sedeDTO = new SedeResponseDTO();
+        sedeDTO.setId(sede.getId());
+        sedeDTO.setNombre(sede.getNombre());
+        sedeDTO.setDireccion(sede.getDireccion());
+        sedeDTO.setDescripcion(sede.getDescripcion());
+        sedeDTO.setTelefono(sede.getTelefono());
+        sedeDTO.setCoordenadas(sede.getCoordenadas());
+        sedeDTO.setFechaCreacion(sede.getFechaCreacion());
+        sedeDTO.setFechaActualizacion(sede.getFechaActualizacion());
+        return sedeDTO;
+    }
+    
+    private void asignarParticipantesADTO(PartidoResponseDTO dto, Partido partido) {
         if (partido.getParticipantes() != null && !partido.getParticipantes().isEmpty()) {
             List<ParticipanteResponseDTO> participantesDTO = partido.getParticipantes().stream()
                     .map(this::convertirParticipanteADTO)
@@ -326,8 +377,6 @@ public class PartidoService {
         } else {
             dto.setParticipantes(new ArrayList<>());
         }
-
-        return dto;
     }
 
     private ParticipanteResponseDTO convertirParticipanteADTO(Participante participante) {

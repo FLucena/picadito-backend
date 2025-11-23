@@ -37,6 +37,7 @@ public class PartidosSeleccionadosService {
     }
     
     @Transactional
+    @SuppressWarnings("null")
     public PartidosSeleccionadosDTO agregarPartido(Long usuarioId, Long partidoId, Integer cantidad) {
         Objects.requireNonNull(usuarioId, "El ID del usuario no puede ser null");
         Objects.requireNonNull(partidoId, "El ID del partido no puede ser null");
@@ -46,44 +47,63 @@ public class PartidosSeleccionadosService {
                 .orElseGet(() -> crearPartidosSeleccionados(usuarioId));
         
         Partido partido = partidoService.obtenerPartidoEntity(partidoId);
+        validarPartidoParaAgregar(partido, cantidad);
         
-        // Validar que el partido esté disponible
+        agregarOActualizarLinea(partidosSeleccionados, partido, partidoId, cantidad);
+        
+        partidosSeleccionados = partidosSeleccionadosRepository.save(partidosSeleccionados);
+        return mapperUtil.toPartidosSeleccionadosDTO(partidosSeleccionados);
+    }
+    
+    private void validarPartidoParaAgregar(Partido partido, Integer cantidad) {
         if (partido.getEstado() != EstadoPartido.DISPONIBLE) {
             throw new BusinessException("El partido no está disponible. Estado actual: " + partido.getEstado());
         }
         
-        // Validar que no esté completo
         if (partido.estaCompleto()) {
             throw new BusinessException("El partido ya está completo. Máximo de jugadores: " + partido.getMaxJugadores());
         }
         
-        // Validar capacidad disponible
         int capacidadDisponible = partido.getMaxJugadores() - partido.getCantidadParticipantes();
         if (cantidad > capacidadDisponible) {
             throw new BusinessException("No hay suficiente capacidad disponible. Capacidad disponible: " + capacidadDisponible);
         }
+    }
+    
+    private void agregarOActualizarLinea(PartidosSeleccionados partidosSeleccionados, Partido partido, Long partidoId, Integer cantidad) {
+        LineaPartidoSeleccionado lineaExistente = buscarLineaExistente(partidosSeleccionados, partidoId);
         
-        LineaPartidoSeleccionado lineaExistente = partidosSeleccionados.getItems().stream()
+        if (lineaExistente != null) {
+            actualizarLineaExistente(lineaExistente, partido, cantidad);
+        } else {
+            crearNuevaLinea(partidosSeleccionados, partido, cantidad);
+        }
+    }
+    
+    private LineaPartidoSeleccionado buscarLineaExistente(PartidosSeleccionados partidosSeleccionados, Long partidoId) {
+        return partidosSeleccionados.getItems().stream()
                 .filter(item -> item.getPartido().getId().equals(partidoId))
                 .findFirst()
                 .orElse(null);
+    }
+    
+    private void actualizarLineaExistente(LineaPartidoSeleccionado lineaExistente, Partido partido, Integer cantidad) {
+        int capacidadDisponible = partido.getMaxJugadores() - partido.getCantidadParticipantes();
+        int nuevaCantidad = lineaExistente.getCantidad() + cantidad;
         
-        if (lineaExistente != null) {
-            int nuevaCantidad = lineaExistente.getCantidad() + cantidad;
-            if (nuevaCantidad > capacidadDisponible) {
-                throw new BusinessException("No hay suficiente capacidad disponible. Capacidad disponible: " + capacidadDisponible);
-            }
-            lineaExistente.setCantidad(nuevaCantidad);
-        } else {
-            LineaPartidoSeleccionado nuevaLinea = new LineaPartidoSeleccionado();
-            nuevaLinea.setPartidosSeleccionados(partidosSeleccionados);
-            nuevaLinea.setPartido(partido);
-            nuevaLinea.setCantidad(cantidad);
-            partidosSeleccionados.getItems().add(nuevaLinea);
+        if (nuevaCantidad > capacidadDisponible) {
+            throw new BusinessException("No hay suficiente capacidad disponible. Capacidad disponible: " + capacidadDisponible);
         }
         
-        partidosSeleccionados = partidosSeleccionadosRepository.save(partidosSeleccionados);
-        return mapperUtil.toPartidosSeleccionadosDTO(partidosSeleccionados);
+        lineaExistente.setCantidad(nuevaCantidad);
+    }
+    
+    private void crearNuevaLinea(PartidosSeleccionados partidosSeleccionados, Partido partido, Integer cantidad) {
+        LineaPartidoSeleccionado nuevaLinea = new LineaPartidoSeleccionado();
+        nuevaLinea.setPartidosSeleccionados(partidosSeleccionados);
+        nuevaLinea.setPartido(partido);
+        nuevaLinea.setCantidad(cantidad);
+        partidosSeleccionados.getItems().add(nuevaLinea);
     }
     
     @Transactional

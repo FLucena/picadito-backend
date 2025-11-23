@@ -28,9 +28,8 @@ class SedeControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    // Nota: @MockBean está deprecado en Spring Boot 3.4+ pero sigue siendo la forma estándar de mockear beans en @WebMvcTest
-    @SuppressWarnings("deprecation")
     @MockBean
+    @SuppressWarnings("removal")
     private SedeService sedeService;
 
     @Autowired

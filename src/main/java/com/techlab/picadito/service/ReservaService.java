@@ -13,8 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,6 +28,17 @@ public class ReservaService {
     private final PartidosSeleccionadosService partidosSeleccionadosService;
     private final ParticipanteService participanteService;
     private final MapperUtil mapperUtil;
+    
+    private static final Map<Reserva.EstadoReserva, Set<Reserva.EstadoReserva>> TRANSICIONES_VALIDAS = new HashMap<>();
+    
+    static {
+        TRANSICIONES_VALIDAS.put(Reserva.EstadoReserva.PENDIENTE, 
+            Set.of(Reserva.EstadoReserva.CONFIRMADO, Reserva.EstadoReserva.CANCELADO));
+        TRANSICIONES_VALIDAS.put(Reserva.EstadoReserva.CONFIRMADO, 
+            Set.of(Reserva.EstadoReserva.EN_PROCESO, Reserva.EstadoReserva.CANCELADO));
+        TRANSICIONES_VALIDAS.put(Reserva.EstadoReserva.EN_PROCESO, 
+            Set.of(Reserva.EstadoReserva.FINALIZADO, Reserva.EstadoReserva.CANCELADO));
+    }
     
     public List<ReservaDTO> obtenerTodos() {
         return reservaRepository.findAll().stream()
@@ -50,6 +60,7 @@ public class ReservaService {
     }
     
     @Transactional
+    @SuppressWarnings("null")
     public ReservaDTO crearDesdePartidosSeleccionados(Long usuarioId) {
         com.techlab.picadito.dto.PartidosSeleccionadosDTO partidosSeleccionadosDTO = partidosSeleccionadosService.obtenerPartidosSeleccionadosPorUsuario(usuarioId);
         
@@ -57,58 +68,11 @@ public class ReservaService {
             throw new BusinessException("No hay partidos seleccionados");
         }
         
-        Reserva reserva = new Reserva();
-        reserva.setUsuario(usuarioService.obtenerUsuarioEntity(usuarioId));
-        reserva.setEstado(Reserva.EstadoReserva.PENDIENTE);
-        
-        // Inscribir participantes en cada partido seleccionado
-        for (com.techlab.picadito.dto.LineaPartidoSeleccionadoDTO item : partidosSeleccionadosDTO.getItems()) {
-            Long partidoId = Objects.requireNonNull(item.getPartidoId(), "El ID del partido no puede ser null");
-            Partido partido = partidoService.obtenerPartidoEntity(partidoId);
-            
-            // Validar disponibilidad
-            if (partido.getEstado() != EstadoPartido.DISPONIBLE) {
-                throw new BusinessException("El partido '" + partido.getTitulo() + "' no está disponible");
-            }
-            
-            // Validar capacidad
-            int capacidadDisponible = partido.getMaxJugadores() - partido.getCantidadParticipantes();
-            if (item.getCantidad() > capacidadDisponible) {
-                throw new BusinessException("No hay suficiente capacidad disponible en el partido '" + partido.getTitulo() + "'. Capacidad disponible: " + capacidadDisponible);
-            }
-            
-            // Validar que el partido tenga precio (opcional pero recomendado para calcular totales)
-            if (partido.getPrecio() == null) {
-                logger.warn("El partido '{}' no tiene precio definido. El total de la reserva puede ser 0", partido.getTitulo());
-            }
-            
-            LineaReserva linea = new LineaReserva();
-            linea.setReserva(reserva);
-            linea.setPartido(partido);
-            linea.setCantidad(item.getCantidad());
-            
-            reserva.getLineasReserva().add(linea);
-        }
-        
+        Reserva reserva = crearReservaInicial(usuarioId);
+        validarYCrearLineasReserva(reserva, partidosSeleccionadosDTO);
         reserva = reservaRepository.save(reserva);
         
-        // Inscribir participantes (simplificado: usar el nombre del usuario)
-        Usuario usuario = usuarioService.obtenerUsuarioEntity(usuarioId);
-        for (LineaReserva linea : reserva.getLineasReserva()) {
-            for (int i = 0; i < linea.getCantidad(); i++) {
-                com.techlab.picadito.dto.ParticipanteDTO participanteDTO = new com.techlab.picadito.dto.ParticipanteDTO();
-                participanteDTO.setNombre(usuario.getNombre() + " " + (i + 1));
-                try {
-                    Long partidoId = Objects.requireNonNull(linea.getPartido().getId(), "El ID del partido no puede ser null");
-                    participanteService.inscribirseAPartido(partidoId, participanteDTO);
-                } catch (BusinessException e) {
-                    // Si falla la inscripción, cancelar la reserva
-                    reserva.setEstado(Reserva.EstadoReserva.CANCELADO);
-                    reservaRepository.save(reserva);
-                    throw new BusinessException("Error al inscribir participantes: " + e.getMessage());
-                }
-            }
-        }
+        inscribirParticipantesEnReserva(reserva, usuarioId);
         
         // Confirmar la reserva
         reserva.setEstado(Reserva.EstadoReserva.CONFIRMADO);
@@ -120,6 +84,82 @@ public class ReservaService {
         partidosSeleccionadosService.vaciarPartidosSeleccionados(usuarioId);
         
         return mapperUtil.toReservaDTO(reserva);
+    }
+    
+    private Reserva crearReservaInicial(Long usuarioId) {
+        Reserva reserva = new Reserva();
+        reserva.setUsuario(usuarioService.obtenerUsuarioEntity(usuarioId));
+        reserva.setEstado(Reserva.EstadoReserva.PENDIENTE);
+        return reserva;
+    }
+    
+    private void validarYCrearLineasReserva(Reserva reserva, com.techlab.picadito.dto.PartidosSeleccionadosDTO partidosSeleccionadosDTO) {
+        for (com.techlab.picadito.dto.LineaPartidoSeleccionadoDTO item : partidosSeleccionadosDTO.getItems()) {
+            Long partidoId = Objects.requireNonNull(item.getPartidoId(), "El ID del partido no puede ser null");
+            Partido partido = partidoService.obtenerPartidoEntity(partidoId);
+            
+            validarPartidoParaReserva(partido, item.getCantidad());
+            
+            LineaReserva linea = new LineaReserva();
+            linea.setReserva(reserva);
+            linea.setPartido(partido);
+            linea.setCantidad(item.getCantidad());
+            
+            reserva.getLineasReserva().add(linea);
+        }
+    }
+    
+    private void validarPartidoParaReserva(Partido partido, Integer cantidad) {
+        // Validar disponibilidad
+        if (partido.getEstado() != EstadoPartido.DISPONIBLE) {
+            throw new BusinessException("El partido '" + partido.getTitulo() + "' no está disponible");
+        }
+        
+        // Validar capacidad
+        int capacidadDisponible = partido.getMaxJugadores() - partido.getCantidadParticipantes();
+        if (cantidad > capacidadDisponible) {
+            throw new BusinessException("No hay suficiente capacidad disponible en el partido '" + partido.getTitulo() + "'. Capacidad disponible: " + capacidadDisponible);
+        }
+        
+        // Validar que el partido tenga precio (opcional pero recomendado para calcular totales)
+        if (partido.getPrecio() == null) {
+            logger.warn("El partido '{}' no tiene precio definido. El total de la reserva puede ser 0", partido.getTitulo());
+        }
+    }
+    
+    private void inscribirParticipantesEnReserva(Reserva reserva, Long usuarioId) {
+        Usuario usuario = usuarioService.obtenerUsuarioEntity(usuarioId);
+        for (LineaReserva linea : reserva.getLineasReserva()) {
+            inscribirParticipantesEnLinea(linea, usuario, reserva);
+        }
+    }
+    
+    private void inscribirParticipantesEnLinea(LineaReserva linea, Usuario usuario, Reserva reserva) {
+        for (int i = 0; i < linea.getCantidad(); i++) {
+            com.techlab.picadito.dto.ParticipanteDTO participanteDTO = crearParticipanteDTO(usuario, i);
+            inscribirParticipanteConManejoErrores(linea, participanteDTO, reserva);
+        }
+    }
+    
+    private com.techlab.picadito.dto.ParticipanteDTO crearParticipanteDTO(Usuario usuario, int indice) {
+        com.techlab.picadito.dto.ParticipanteDTO participanteDTO = new com.techlab.picadito.dto.ParticipanteDTO();
+        participanteDTO.setNombre(usuario.getNombre() + " " + (indice + 1));
+        return participanteDTO;
+    }
+    
+    private void inscribirParticipanteConManejoErrores(LineaReserva linea, com.techlab.picadito.dto.ParticipanteDTO participanteDTO, Reserva reserva) {
+        try {
+            Long partidoId = Objects.requireNonNull(linea.getPartido().getId(), "El ID del partido no puede ser null");
+            participanteService.inscribirseAPartido(partidoId, participanteDTO);
+        } catch (BusinessException e) {
+            cancelarReservaPorError(reserva, e);
+            throw new BusinessException("Error al inscribir participantes: " + e.getMessage());
+        }
+    }
+    
+    private void cancelarReservaPorError(Reserva reserva, BusinessException e) {
+        reserva.setEstado(Reserva.EstadoReserva.CANCELADO);
+        reservaRepository.save(reserva);
     }
     
     @Transactional
@@ -151,27 +191,11 @@ public class ReservaService {
             throw new BusinessException("No se puede cambiar el estado de una reserva CANCELADA");
         }
         
-        // Validar transiciones válidas
-        switch (estadoActual) {
-            case PENDIENTE:
-                if (nuevoEstado != Reserva.EstadoReserva.CONFIRMADO && nuevoEstado != Reserva.EstadoReserva.CANCELADO) {
-                    throw new BusinessException("Una reserva PENDIENTE solo puede pasar a CONFIRMADO o CANCELADO");
-                }
-                break;
-            case CONFIRMADO:
-                if (nuevoEstado != Reserva.EstadoReserva.EN_PROCESO && nuevoEstado != Reserva.EstadoReserva.CANCELADO) {
-                    throw new BusinessException("Una reserva CONFIRMADA solo puede pasar a EN_PROCESO o CANCELADO");
-                }
-                break;
-            case EN_PROCESO:
-                if (nuevoEstado != Reserva.EstadoReserva.FINALIZADO && nuevoEstado != Reserva.EstadoReserva.CANCELADO) {
-                    throw new BusinessException("Una reserva EN_PROCESO solo puede pasar a FINALIZADO o CANCELADO");
-                }
-                break;
-            case FINALIZADO:
-                throw new BusinessException("Una reserva FINALIZADA no puede cambiar de estado");
-            case CANCELADO:
-                throw new BusinessException("Una reserva CANCELADA no puede cambiar de estado");
+        // Validar transiciones válidas usando el Map
+        Set<Reserva.EstadoReserva> transicionesValidas = TRANSICIONES_VALIDAS.get(estadoActual);
+        if (transicionesValidas == null || !transicionesValidas.contains(nuevoEstado)) {
+            throw new BusinessException("Transición inválida: una reserva " + estadoActual.name() + 
+                " no puede pasar a " + nuevoEstado.name());
         }
     }
     
@@ -179,11 +203,20 @@ public class ReservaService {
      * Actualiza el estado de una reserva específica basándose en las fechas de sus partidos
      */
     private void actualizarEstadoAutomatico(Reserva reserva) {
-        if (reserva.getEstado() == Reserva.EstadoReserva.FINALIZADO || 
-            reserva.getEstado() == Reserva.EstadoReserva.CANCELADO) {
+        if (esEstadoTerminal(reserva.getEstado())) {
             return; // Estados terminales, no actualizar
         }
         
+        EstadoEvaluacion evaluacion = evaluarEstadoReserva(reserva);
+        aplicarActualizacionEstado(reserva, evaluacion);
+    }
+    
+    private boolean esEstadoTerminal(Reserva.EstadoReserva estado) {
+        return estado == Reserva.EstadoReserva.FINALIZADO || 
+               estado == Reserva.EstadoReserva.CANCELADO;
+    }
+    
+    private EstadoEvaluacion evaluarEstadoReserva(Reserva reserva) {
         LocalDateTime ahora = LocalDateTime.now();
         LocalDateTime proximas24Horas = ahora.plusHours(24);
         
@@ -193,25 +226,40 @@ public class ReservaService {
         for (LineaReserva linea : reserva.getLineasReserva()) {
             Partido partido = linea.getPartido();
             
-            // Verificar si algún partido está próximo (menos de 24 horas)
-            if (partido.getFechaHora().isAfter(ahora) && 
-                partido.getFechaHora().isBefore(proximas24Horas)) {
+            if (esPartidoProximo(partido, ahora, proximas24Horas)) {
                 algunoProximo = true;
             }
             
-            // Verificar si todos los partidos están finalizados
             if (partido.getEstado() != EstadoPartido.FINALIZADO) {
                 todosFinalizados = false;
             }
         }
         
-        // Actualizar estado según las condiciones
-        if (todosFinalizados && reserva.getEstado() != Reserva.EstadoReserva.FINALIZADO) {
+        return new EstadoEvaluacion(todosFinalizados, algunoProximo);
+    }
+    
+    private boolean esPartidoProximo(Partido partido, LocalDateTime ahora, LocalDateTime proximas24Horas) {
+        return partido.getFechaHora().isAfter(ahora) && 
+               partido.getFechaHora().isBefore(proximas24Horas);
+    }
+    
+    private void aplicarActualizacionEstado(Reserva reserva, EstadoEvaluacion evaluacion) {
+        if (evaluacion.todosFinalizados && reserva.getEstado() != Reserva.EstadoReserva.FINALIZADO) {
             reserva.setEstado(Reserva.EstadoReserva.FINALIZADO);
             reservaRepository.save(reserva);
-        } else if (algunoProximo && reserva.getEstado() == Reserva.EstadoReserva.CONFIRMADO) {
+        } else if (evaluacion.algunoProximo && reserva.getEstado() == Reserva.EstadoReserva.CONFIRMADO) {
             reserva.setEstado(Reserva.EstadoReserva.EN_PROCESO);
             reservaRepository.save(reserva);
+        }
+    }
+    
+    private static class EstadoEvaluacion {
+        final boolean todosFinalizados;
+        final boolean algunoProximo;
+        
+        EstadoEvaluacion(boolean todosFinalizados, boolean algunoProximo) {
+            this.todosFinalizados = todosFinalizados;
+            this.algunoProximo = algunoProximo;
         }
     }
     
@@ -220,43 +268,10 @@ public class ReservaService {
      */
     @Transactional
     public void actualizarEstadosAutomaticamente() {
-        LocalDateTime ahora = LocalDateTime.now();
-        LocalDateTime proximas24Horas = ahora.plusHours(24);
-        
         List<Reserva> reservas = reservaRepository.findAll();
         
         for (Reserva reserva : reservas) {
-            if (reserva.getEstado() == Reserva.EstadoReserva.FINALIZADO || 
-                reserva.getEstado() == Reserva.EstadoReserva.CANCELADO) {
-                continue; // Estados terminales, no actualizar
-            }
-            
-            boolean todosFinalizados = true;
-            boolean algunoProximo = false;
-            
-            for (LineaReserva linea : reserva.getLineasReserva()) {
-                Partido partido = linea.getPartido();
-                
-                // Verificar si algún partido está próximo (menos de 24 horas)
-                if (partido.getFechaHora().isAfter(ahora) && 
-                    partido.getFechaHora().isBefore(proximas24Horas)) {
-                    algunoProximo = true;
-                }
-                
-                // Verificar si todos los partidos están finalizados
-                if (partido.getEstado() != EstadoPartido.FINALIZADO) {
-                    todosFinalizados = false;
-                }
-            }
-            
-            // Actualizar estado según las condiciones
-            if (todosFinalizados && reserva.getEstado() != Reserva.EstadoReserva.FINALIZADO) {
-                reserva.setEstado(Reserva.EstadoReserva.FINALIZADO);
-                reservaRepository.save(reserva);
-            } else if (algunoProximo && reserva.getEstado() == Reserva.EstadoReserva.CONFIRMADO) {
-                reserva.setEstado(Reserva.EstadoReserva.EN_PROCESO);
-                reservaRepository.save(reserva);
-            }
+            actualizarEstadoAutomatico(reserva);
         }
     }
     

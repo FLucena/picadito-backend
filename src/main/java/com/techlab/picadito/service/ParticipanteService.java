@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
+@SuppressWarnings("null")
 public class ParticipanteService {
 
     private static final Logger logger = LoggerFactory.getLogger(ParticipanteService.class);
@@ -38,43 +39,56 @@ public class ParticipanteService {
     public ParticipanteResponseDTO inscribirseAPartido(@NonNull Long partidoId, ParticipanteDTO participanteDTO) {
         logger.info("Inscribiendo participante {} al partido {}", participanteDTO.getNombre(), partidoId);
         
-        // Recargar el partido con bloqueo pesimista para evitar race conditions
+        Partido partido = obtenerYValidarPartido(partidoId, participanteDTO);
+        Participante participante = crearYGuardarParticipante(participanteDTO, partido);
+        actualizarEstadoPartido(partidoId, partido);
+
+        logger.info("Participante inscrito exitosamente con id: {}", participante.getId());
+        return convertirADTO(participante);
+    }
+    
+    private Partido obtenerYValidarPartido(Long partidoId, ParticipanteDTO participanteDTO) {
         Partido partido = partidoRepository.findById(partidoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Partido no encontrado con id: " + partidoId));
 
-        // Validar que el partido esté disponible
+        validarPartidoDisponible(partido);
+        validarPartidoNoCompleto(partido);
+        validarNombreNoDuplicado(partido, participanteDTO.getNombre());
+        
+        return partido;
+    }
+    
+    private void validarPartidoDisponible(Partido partido) {
         if (partido.getEstado() != EstadoPartido.DISPONIBLE) {
             throw new BusinessException("No se puede inscribir a un partido que no está disponible. Estado actual: " + partido.getEstado());
         }
-
-        // Validar que no esté completo (después de bloqueo)
+    }
+    
+    private void validarPartidoNoCompleto(Partido partido) {
         if (partido.estaCompleto()) {
             throw new BusinessException("El partido ya está completo. Máximo de jugadores: " + partido.getMaxJugadores());
         }
-
-        // Validar que el nombre no esté ya inscrito
-        if (participanteRepository.existsByPartidoAndNombre(partido, participanteDTO.getNombre())) {
-            throw new BusinessException("Ya existe un participante con el nombre '" + participanteDTO.getNombre() + "' en este partido");
+    }
+    
+    private void validarNombreNoDuplicado(Partido partido, String nombre) {
+        if (participanteRepository.existsByPartidoAndNombre(partido, nombre)) {
+            throw new BusinessException("Ya existe un participante con el nombre '" + nombre + "' en este partido");
         }
-
-        // Crear participante
+    }
+    
+    private Participante crearYGuardarParticipante(ParticipanteDTO participanteDTO, Partido partido) {
         Participante participante = new Participante();
         participante.setNombre(participanteDTO.getNombre());
         participante.setApodo(participanteDTO.getApodo());
         participante.setPosicion(participanteDTO.getPosicion());
         participante.setNivel(participanteDTO.getNivel());
         participante.setPartido(partido);
-
-        participante = participanteRepository.save(participante);
-        
-        // Recargar el partido para obtener la lista actualizada de participantes
-        partido = partidoRepository.findById(partidoId).orElse(partido);
-        
-        // Actualizar estado del partido si está completo
-        partidoService.actualizarEstadoSegunParticipantes(partido);
-
-        logger.info("Participante inscrito exitosamente con id: {}", participante.getId());
-        return convertirADTO(participante);
+        return participanteRepository.save(participante);
+    }
+    
+    private void actualizarEstadoPartido(@NonNull Long partidoId, Partido partido) {
+        Partido partidoActualizado = partidoRepository.findById(partidoId).orElse(partido);
+        partidoService.actualizarEstadoSegunParticipantes(partidoActualizado);
     }
 
     public List<ParticipanteResponseDTO> obtenerParticipantesPorPartido(@NonNull Long partidoId) {

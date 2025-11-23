@@ -18,7 +18,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -80,6 +79,7 @@ class ParticipanteServiceTest {
     }
 
     @Test
+    @SuppressWarnings("null")
     void inscribirseAPartido_WithValidData_ShouldCreateParticipante() {
         when(partidoRepository.findById(1L)).thenReturn(Optional.of(partido));
         when(participanteRepository.existsByPartidoAndNombre(partido, "Juan Pérez")).thenReturn(false);
@@ -154,6 +154,7 @@ class ParticipanteServiceTest {
     }
 
     @Test
+    @SuppressWarnings("null")
     void desinscribirseDePartido_WithValidIds_ShouldRemoveParticipante() {
         when(partidoRepository.findById(1L)).thenReturn(Optional.of(partido));
         when(participanteRepository.findById(1L)).thenReturn(Optional.of(participante));

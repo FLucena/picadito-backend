@@ -1,6 +1,5 @@
 package com.techlab.picadito.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techlab.picadito.dto.ReservaDTO;
 import com.techlab.picadito.model.Reserva;
 import com.techlab.picadito.service.ReservaService;
@@ -10,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import static org.mockito.Mockito.verify;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
@@ -29,12 +27,9 @@ class ReservaControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @SuppressWarnings("deprecation")
     @MockBean
+    @SuppressWarnings("removal")
     private ReservaService reservaService;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     private ReservaDTO reservaDTO;
 
