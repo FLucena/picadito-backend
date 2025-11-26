@@ -18,6 +18,7 @@ import com.techlab.picadito.model.Sede;
 import com.techlab.picadito.repository.PartidoRepository;
 import com.techlab.picadito.repository.SedeRepository;
 import jakarta.persistence.criteria.*;
+import jakarta.persistence.criteria.Join;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -87,7 +88,7 @@ public class PartidoService {
 
         Partido partido = crearEntidadPartido(partidoDTO);
         asignarSedeSiExiste(partido, partidoDTO.getSedeId());
-        asignarCategoriaSiExiste(partido, partidoDTO.getCategoriaId());
+        asignarCategorias(partido, partidoDTO);
 
         partido = partidoRepository.save(partido);
         
@@ -120,10 +121,15 @@ public class PartidoService {
         }
     }
 
-    private void asignarCategoriaSiExiste(Partido partido, Long categoriaId) {
-        if (categoriaId != null) {
-            Categoria categoria = categoriaService.obtenerCategoriaEntity(categoriaId);
-            partido.setCategoria(categoria);
+    private void asignarCategorias(Partido partido, PartidoDTO partidoDTO) {
+        List<Long> categoriaIds = partidoDTO.getCategoriaIds();
+        if (categoriaIds != null && !categoriaIds.isEmpty()) {
+            List<Categoria> categorias = categoriaIds.stream()
+                    .map(categoriaService::obtenerCategoriaEntity)
+                    .collect(Collectors.toList());
+            partido.setCategorias(categorias);
+        } else {
+            partido.setCategorias(new ArrayList<>());
         }
     }
 
@@ -178,7 +184,7 @@ public class PartidoService {
         }
         
         actualizarSede(partido, partidoDTO.getSedeId());
-        actualizarCategoria(partido, partidoDTO.getCategoriaId());
+        actualizarCategorias(partido, partidoDTO);
         
         if (partidoDTO.getMaxJugadores() != null) {
             partido.setMaxJugadores(partidoDTO.getMaxJugadores());
@@ -202,13 +208,15 @@ public class PartidoService {
         }
     }
 
-    private void actualizarCategoria(Partido partido, Long categoriaId) {
-        if (categoriaId != null) {
-            Categoria categoria = categoriaService.obtenerCategoriaEntity(categoriaId);
-            partido.setCategoria(categoria);
-        } else if (categoriaId == null && partido.getCategoria() != null) {
-            // Si se envía null explícitamente, remover la categoría
-            partido.setCategoria(null);
+    private void actualizarCategorias(Partido partido, PartidoDTO partidoDTO) {
+        List<Long> categoriaIds = partidoDTO.getCategoriaIds();
+        if (categoriaIds == null || categoriaIds.isEmpty()) {
+            partido.setCategorias(new ArrayList<>());
+        } else {
+            List<Categoria> categorias = categoriaIds.stream()
+                    .map(categoriaService::obtenerCategoriaEntity)
+                    .collect(Collectors.toList());
+            partido.setCategorias(categorias);
         }
     }
 
@@ -285,7 +293,7 @@ public class PartidoService {
             agregarFiltrosJugadores(predicates, busqueda, root, cb);
             agregarFiltroCuposDisponibles(predicates, busqueda, root, cb);
             agregarFiltroSoloDisponibles(predicates, busqueda, root, cb);
-            agregarFiltroCategoria(predicates, busqueda, root, cb);
+            agregarFiltroCategoria(predicates, busqueda, root, cb, query);
             aplicarOrdenamiento(query, root, cb);
 
             return cb.and(predicates.toArray(new Predicate[0]));
@@ -360,9 +368,14 @@ public class PartidoService {
         }
     }
 
-    private void agregarFiltroCategoria(List<Predicate> predicates, BusquedaPartidoDTO busqueda, Root<Partido> root, CriteriaBuilder cb) {
-        if (busqueda.getCategoriaId() != null) {
-            predicates.add(cb.equal(root.get("categoria").get("id"), busqueda.getCategoriaId()));
+    private void agregarFiltroCategoria(List<Predicate> predicates, BusquedaPartidoDTO busqueda, Root<Partido> root, CriteriaBuilder cb, CriteriaQuery<?> query) {
+        List<Long> categoriaIds = busqueda.getCategoriaIds();
+        if (categoriaIds != null && !categoriaIds.isEmpty()) {
+            // Filtrar partidos que tengan al menos una de las categorías especificadas
+            Join<Partido, Categoria> categoriasJoin = root.join("categorias");
+            predicates.add(categoriasJoin.get("id").in(categoriaIds));
+            // Evitar duplicados cuando hay join con categorias
+            query.distinct(true);
         }
     }
     
@@ -381,7 +394,7 @@ public class PartidoService {
     private PartidoResponseDTO convertirADTO(Partido partido) {
         PartidoResponseDTO dto = mapearCamposBasicos(partido);
         asignarSedeADTO(dto, partido);
-        asignarCategoriaADTO(dto, partido);
+        asignarCategoriasADTO(dto, partido);
         asignarParticipantesADTO(dto, partido);
         asignarPromedioCalificacion(dto, partido);
         asignarEquiposADTO(dto, partido);
@@ -412,10 +425,20 @@ public class PartidoService {
         }
     }
 
-    private void asignarCategoriaADTO(PartidoResponseDTO dto, Partido partido) {
-        if (partido.getCategoria() != null) {
-            dto.setCategoriaId(partido.getCategoria().getId());
-            dto.setCategoria(convertirCategoriaADTO(partido.getCategoria()));
+    private void asignarCategoriasADTO(PartidoResponseDTO dto, Partido partido) {
+        if (partido.getCategorias() != null && !partido.getCategorias().isEmpty()) {
+            List<CategoriaResponseDTO> categoriasDTO = partido.getCategorias().stream()
+                    .map(this::convertirCategoriaADTO)
+                    .collect(Collectors.toList());
+            dto.setCategorias(categoriasDTO);
+            
+            List<Long> categoriaIds = partido.getCategorias().stream()
+                    .map(Categoria::getId)
+                    .collect(Collectors.toList());
+            dto.setCategoriaIds(categoriaIds);
+        } else {
+            dto.setCategorias(new ArrayList<>());
+            dto.setCategoriaIds(new ArrayList<>());
         }
     }
 

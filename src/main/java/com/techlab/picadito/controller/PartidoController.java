@@ -100,7 +100,7 @@ public class PartidoController {
         try {
             Long idLong = Long.parseLong(categoriaId);
             BusquedaPartidoDTO busqueda = new BusquedaPartidoDTO();
-            busqueda.setCategoriaId(idLong);
+            busqueda.setCategoriaIds(List.of(idLong));
             List<PartidoResponseDTO> partidos = partidoService.buscarPartidos(busqueda);
             return ResponseEntity.ok(partidos);
         } catch (NumberFormatException e) {

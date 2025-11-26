@@ -35,9 +35,13 @@ public class Partido {
     @JoinColumn(name = "sede_id", nullable = true)
     private Sede sede;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "categoria_id", nullable = true)
-    private Categoria categoria;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "partido_categorias",
+        joinColumns = @JoinColumn(name = "partido_id"),
+        inverseJoinColumns = @JoinColumn(name = "categoria_id")
+    )
+    private List<Categoria> categorias = new ArrayList<>();
 
     @NotNull(message = "El número máximo de jugadores es requerido")
     @Min(value = 1, message = "El número máximo de jugadores debe ser al menos 1")
@@ -203,12 +207,12 @@ public class Partido {
         this.imagenUrl = imagenUrl;
     }
 
-    public Categoria getCategoria() {
-        return categoria;
+    public List<Categoria> getCategorias() {
+        return categorias;
     }
 
-    public void setCategoria(Categoria categoria) {
-        this.categoria = categoria;
+    public void setCategorias(List<Categoria> categorias) {
+        this.categorias = categorias != null ? categorias : new ArrayList<>();
     }
 
     public List<Equipo> getEquipos() {

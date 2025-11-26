@@ -168,10 +168,13 @@ public class EstadisticasService {
     }
 
     private Map<String, Long> obtenerPartidosPorCategoria() {
+        // Contar todas las relaciones partido-categoría (un partido puede tener múltiples categorías)
         return partidoRepository.findAll().stream()
-                .filter(p -> p.getCategoria() != null)
+                .filter(p -> p.getCategorias() != null && !p.getCategorias().isEmpty())
+                .flatMap(p -> p.getCategorias().stream()
+                        .map(c -> new AbstractMap.SimpleEntry<>(c.getNombre(), p.getId())))
                 .collect(Collectors.groupingBy(
-                        p -> p.getCategoria().getNombre(),
+                        Map.Entry::getKey,
                         Collectors.counting()
                 ));
     }

@@ -21,8 +21,8 @@ public class PartidoResponseDTO {
     private List<ParticipanteResponseDTO> participantes;
     private Double precio;
     private String imagenUrl;
-    private Long categoriaId;
-    private CategoriaResponseDTO categoria;
+    private List<Long> categoriaIds;
+    private List<CategoriaResponseDTO> categorias;
     private Double promedioCalificacion;
     private List<EquipoResponseDTO> equipos;
 
@@ -147,20 +147,20 @@ public class PartidoResponseDTO {
         this.imagenUrl = imagenUrl;
     }
 
-    public Long getCategoriaId() {
-        return categoriaId;
+    public List<Long> getCategoriaIds() {
+        return categoriaIds;
     }
 
-    public void setCategoriaId(Long categoriaId) {
-        this.categoriaId = categoriaId;
+    public void setCategoriaIds(List<Long> categoriaIds) {
+        this.categoriaIds = categoriaIds;
     }
 
-    public CategoriaResponseDTO getCategoria() {
-        return categoria;
+    public List<CategoriaResponseDTO> getCategorias() {
+        return categorias;
     }
 
-    public void setCategoria(CategoriaResponseDTO categoria) {
-        this.categoria = categoria;
+    public void setCategorias(List<CategoriaResponseDTO> categorias) {
+        this.categorias = categorias;
     }
 
     public Double getPromedioCalificacion() {

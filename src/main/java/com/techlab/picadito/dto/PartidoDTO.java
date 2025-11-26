@@ -2,6 +2,7 @@ package com.techlab.picadito.dto;
 
 import jakarta.validation.constraints.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class PartidoDTO {
 
@@ -36,7 +37,7 @@ public class PartidoDTO {
     @Size(max = 500, message = "La URL de la imagen no puede exceder 500 caracteres")
     private String imagenUrl;
 
-    private Long categoriaId;
+    private List<Long> categoriaIds;
 
     // Getters y Setters
     public String getTitulo() {
@@ -111,12 +112,12 @@ public class PartidoDTO {
         this.imagenUrl = imagenUrl;
     }
 
-    public Long getCategoriaId() {
-        return categoriaId;
+    public List<Long> getCategoriaIds() {
+        return categoriaIds;
     }
 
-    public void setCategoriaId(Long categoriaId) {
-        this.categoriaId = categoriaId;
+    public void setCategoriaIds(List<Long> categoriaIds) {
+        this.categoriaIds = categoriaIds;
     }
 }
 

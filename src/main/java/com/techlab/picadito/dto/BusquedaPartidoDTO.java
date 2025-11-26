@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -21,6 +22,6 @@ public class BusquedaPartidoDTO {
     private Integer maxJugadores;
     private Integer cuposDisponiblesMin;
     private Boolean soloDisponibles;
-    private Long categoriaId;
+    private List<Long> categoriaIds;
 }
 

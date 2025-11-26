@@ -16,11 +16,11 @@ public interface PartidoRepository extends JpaRepository<Partido, Long>, JpaSpec
     List<Partido> findByEstado(EstadoPartido estado);
     
     // Usar fetch join para evitar N+1 queries
-    @EntityGraph(attributePaths = {"participantes", "sede"})
+    @EntityGraph(attributePaths = {"participantes", "sede", "categorias"})
     List<Partido> findByEstadoOrderByFechaHoraAsc(EstadoPartido estado);
     
     // Para obtener partido con participantes cargados
-    @EntityGraph(attributePaths = {"participantes", "sede"})
+    @EntityGraph(attributePaths = {"participantes", "sede", "categorias"})
     @Override
     @NonNull
     Optional<Partido> findById(@NonNull Long id);
