@@ -109,12 +109,15 @@ class PartidoServiceTest {
     void crearPartido_WithValidData_ShouldCreatePartido() {
         Partido savedPartido = partido;
         when(partidoRepository.save(any(Partido.class))).thenReturn(savedPartido);
+        when(partidoRepository.findById(1L)).thenReturn(Optional.of(savedPartido));
+        doNothing().when(alertaService).crearAlertaCuposBajos(any(Partido.class));
 
         PartidoResponseDTO result = partidoService.crearPartido(partidoDTO);
 
         assertNotNull(result);
         assertEquals("Partido de Prueba", result.getTitulo());
         verify(partidoRepository, times(1)).save(any(Partido.class));
+        verify(partidoRepository, times(1)).findById(1L);
     }
 
     @Test

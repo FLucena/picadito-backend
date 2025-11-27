@@ -77,13 +77,13 @@ class ParticipanteControllerTest {
 
     @Test
     @SuppressWarnings("null")
-    void inscribirseAPartido_WithInvalidPartidoId_ShouldReturnInternalServerError() throws Exception {
+    void inscribirseAPartido_WithInvalidPartidoId_ShouldReturnBadRequest() throws Exception {
         String jsonContent = objectMapper.writeValueAsString(participanteDTO);
-        // Spring devuelve 500 cuando no puede convertir el path variable a Long
+        // Spring devuelve 400 cuando no puede convertir el path variable a Long
         mockMvc.perform(post("/api/partidos/invalid/participantes")
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(jsonContent))
-                .andExpect(status().isInternalServerError());
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -99,10 +99,10 @@ class ParticipanteControllerTest {
     }
 
     @Test
-    void obtenerParticipantesPorPartido_WithInvalidId_ShouldReturnInternalServerError() throws Exception {
-        // Spring devuelve 500 cuando no puede convertir el path variable a Long
+    void obtenerParticipantesPorPartido_WithInvalidId_ShouldReturnBadRequest() throws Exception {
+        // Spring devuelve 400 cuando no puede convertir el path variable a Long
         mockMvc.perform(get("/api/partidos/invalid/participantes"))
-                .andExpect(status().isInternalServerError());
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -114,13 +114,13 @@ class ParticipanteControllerTest {
     }
 
     @Test
-    void desinscribirseDePartido_WithInvalidIds_ShouldReturnInternalServerError() throws Exception {
-        // Spring devuelve 500 cuando no puede convertir el path variable a Long
+    void desinscribirseDePartido_WithInvalidIds_ShouldReturnBadRequest() throws Exception {
+        // Spring devuelve 400 cuando no puede convertir el path variable a Long
         mockMvc.perform(delete("/api/partidos/invalid/participantes/1"))
-                .andExpect(status().isInternalServerError());
+                .andExpect(status().isBadRequest());
 
         mockMvc.perform(delete("/api/partidos/1/participantes/invalid"))
-                .andExpect(status().isInternalServerError());
+                .andExpect(status().isBadRequest());
     }
 }
 
