@@ -3,7 +3,8 @@ package com.techlab.picadito.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techlab.picadito.dto.CalificacionDTO;
 import com.techlab.picadito.dto.CalificacionResponseDTO;
-import com.techlab.picadito.service.CalificacionService;
+import com.techlab.picadito.dto.CalificacionesResponseDTO;
+import com.techlab.picadito.calificacion.CalificacionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +23,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(CalificacionController.class)
+@WebMvcTest(com.techlab.picadito.calificacion.CalificacionController.class)
 class CalificacionControllerTest {
 
     @Autowired
@@ -74,12 +75,14 @@ class CalificacionControllerTest {
     @Test
     void obtenerPorPartido_ShouldReturnListOfCalificaciones() throws Exception {
         List<CalificacionResponseDTO> calificaciones = Arrays.asList(calificacionResponse);
-        when(calificacionService.obtenerPorPartido(1L)).thenReturn(calificaciones);
+        CalificacionesResponseDTO calificacionesResponse = new CalificacionesResponseDTO(calificaciones);
+        when(calificacionService.obtenerPorPartido(1L)).thenReturn(calificacionesResponse);
 
         mockMvc.perform(get("/api/calificaciones/partido/1"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(jsonPath("$[0].id").value(1));
+                .andExpect(jsonPath("$.calificaciones[0].id").value(1))
+                .andExpect(jsonPath("$.total").value(1));
     }
 
     @Test
@@ -108,4 +111,5 @@ class CalificacionControllerTest {
                 .andExpect(status().isNoContent());
     }
 }
+
 

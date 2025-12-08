@@ -13,7 +13,6 @@ public class CalificacionResponseDTO {
     private String partidoTitulo;
     private LocalDateTime fechaCreacion;
 
-    // Getters y Setters
     public Long getId() {
         return id;
     }

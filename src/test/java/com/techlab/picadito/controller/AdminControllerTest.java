@@ -2,8 +2,9 @@ package com.techlab.picadito.controller;
 
 import com.techlab.picadito.dto.EstadisticasDTO;
 import com.techlab.picadito.dto.PartidoResponseDTO;
+import com.techlab.picadito.dto.PartidosResponseDTO;
 import com.techlab.picadito.dto.ReporteDTO;
-import com.techlab.picadito.service.AdminService;
+import com.techlab.picadito.admin.AdminService;
 import com.techlab.picadito.service.EstadisticasService;
 import com.techlab.picadito.service.ReporteService;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,7 +26,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(AdminController.class)
+@WebMvcTest(com.techlab.picadito.admin.AdminController.class)
 class AdminControllerTest {
 
     @Autowired
@@ -71,12 +72,14 @@ class AdminControllerTest {
         partido.setId(1L);
         partido.setTitulo("Partido con pocos cupos");
         List<PartidoResponseDTO> partidos = Arrays.asList(partido);
-        when(adminService.obtenerPartidosConCapacidadBaja(any())).thenReturn(partidos);
+        PartidosResponseDTO partidosResponse = new PartidosResponseDTO(partidos);
+        when(adminService.obtenerPartidosConCapacidadBaja(any())).thenReturn(partidosResponse);
 
         mockMvc.perform(get("/api/admin/partidos-capacidad-baja"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(jsonPath("$[0].id").value(1));
+                .andExpect(jsonPath("$.partidos[0].id").value(1))
+                .andExpect(jsonPath("$.total").value(1));
     }
 
     @Test
@@ -103,4 +106,5 @@ class AdminControllerTest {
                 .andExpect(jsonPath("$.tipoReporte").value("VENTAS"));
     }
 }
+
 

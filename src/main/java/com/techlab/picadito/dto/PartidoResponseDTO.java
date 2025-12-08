@@ -26,7 +26,6 @@ public class PartidoResponseDTO {
     private Double promedioCalificacion;
     private List<EquipoResponseDTO> equipos;
 
-    // Getters y Setters
     public Long getId() {
         return id;
     }

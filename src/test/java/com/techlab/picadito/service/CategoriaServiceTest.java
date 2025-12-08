@@ -2,10 +2,11 @@ package com.techlab.picadito.service;
 
 import com.techlab.picadito.dto.CategoriaDTO;
 import com.techlab.picadito.dto.CategoriaResponseDTO;
+import com.techlab.picadito.dto.CategoriasResponseDTO;
 import com.techlab.picadito.exception.BusinessException;
 import com.techlab.picadito.exception.ResourceNotFoundException;
 import com.techlab.picadito.model.Categoria;
-import com.techlab.picadito.repository.CategoriaRepository;
+import com.techlab.picadito.categoria.CategoriaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,7 +30,7 @@ class CategoriaServiceTest {
     private CategoriaRepository categoriaRepository;
 
     @InjectMocks
-    private CategoriaService categoriaService;
+    private com.techlab.picadito.categoria.CategoriaService categoriaService;
 
     private Categoria categoria;
     private CategoriaDTO categoriaDTO;
@@ -53,14 +54,16 @@ class CategoriaServiceTest {
     @Test
     void obtenerTodas_ShouldReturnListOfCategorias() {
         List<Categoria> categorias = Arrays.asList(categoria);
-        when(categoriaRepository.findAll()).thenReturn(categorias);
+        when(categoriaRepository.findAllByOrderByNombreAsc()).thenReturn(categorias);
 
-        List<CategoriaResponseDTO> result = categoriaService.obtenerTodas();
+        CategoriasResponseDTO result = categoriaService.obtenerTodas();
 
         assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals("Fútbol 11", result.get(0).getNombre());
-        verify(categoriaRepository, times(1)).findAll();
+        assertNotNull(result.getCategorias());
+        assertEquals(1, result.getCategorias().size());
+        assertEquals("Fútbol 11", result.getCategorias().get(0).getNombre());
+        assertEquals(1, result.getTotal());
+        verify(categoriaRepository, times(1)).findAllByOrderByNombreAsc();
     }
 
     @Test
@@ -179,4 +182,5 @@ class CategoriaServiceTest {
         });
     }
 }
+
 

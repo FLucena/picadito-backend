@@ -11,7 +11,6 @@ public class ReporteDTO {
     private LocalDateTime fechaGeneracion;
     private Map<String, Object> datos;
 
-    // Getters y Setters
     public String getTipoReporte() {
         return tipoReporte;
     }

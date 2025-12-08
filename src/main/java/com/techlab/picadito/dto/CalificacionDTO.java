@@ -18,7 +18,6 @@ public class CalificacionDTO {
     @NotNull(message = "El ID del partido es requerido")
     private Long partidoId;
 
-    // Getters y Setters
     public Integer getPuntuacion() {
         return puntuacion;
     }

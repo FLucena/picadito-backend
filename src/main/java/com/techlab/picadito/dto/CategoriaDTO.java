@@ -18,7 +18,6 @@ public class CategoriaDTO {
     @Size(max = 20, message = "El color no puede exceder 20 caracteres")
     private String color;
 
-    // Getters y Setters
     public String getNombre() {
         return nombre;
     }

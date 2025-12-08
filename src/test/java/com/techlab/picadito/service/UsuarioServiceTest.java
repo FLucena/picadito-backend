@@ -4,7 +4,7 @@ import com.techlab.picadito.dto.UsuarioDTO;
 import com.techlab.picadito.exception.ResourceNotFoundException;
 import com.techlab.picadito.model.Usuario;
 import com.techlab.picadito.model.Usuario.RolUsuario;
-import com.techlab.picadito.repository.UsuarioRepository;
+import com.techlab.picadito.usuario.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,7 +24,7 @@ class UsuarioServiceTest {
     private UsuarioRepository usuarioRepository;
 
     @InjectMocks
-    private UsuarioService usuarioService;
+    private com.techlab.picadito.usuario.UsuarioService usuarioService;
 
     private Usuario usuario;
 
@@ -97,4 +97,5 @@ class UsuarioServiceTest {
         });
     }
 }
+
 

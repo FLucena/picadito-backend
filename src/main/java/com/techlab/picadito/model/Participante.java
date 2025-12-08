@@ -5,7 +5,9 @@ import jakarta.validation.constraints.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "participantes")
+@Table(name = "participantes", indexes = {
+    @Index(name = "idx_participantes_partido_id", columnList = "partido_id")
+})
 public class Participante {
 
     @Id
@@ -41,7 +43,6 @@ public class Participante {
         fechaInscripcion = LocalDateTime.now();
     }
 
-    // Getters y Setters
     public Long getId() {
         return id;
     }

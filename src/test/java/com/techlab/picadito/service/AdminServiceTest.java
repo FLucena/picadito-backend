@@ -1,9 +1,10 @@
 package com.techlab.picadito.service;
 
 import com.techlab.picadito.dto.PartidoResponseDTO;
+import com.techlab.picadito.dto.PartidosResponseDTO;
 import com.techlab.picadito.model.EstadoPartido;
 import com.techlab.picadito.model.Partido;
-import com.techlab.picadito.repository.PartidoRepository;
+import com.techlab.picadito.partido.PartidoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,10 +26,10 @@ class AdminServiceTest {
     private PartidoRepository partidoRepository;
 
     @Mock
-    private PartidoService partidoService;
+    private com.techlab.picadito.partido.PartidoService partidoService;
 
     @InjectMocks
-    private AdminService adminService;
+    private com.techlab.picadito.admin.AdminService adminService;
 
     private Partido partido1;
     private Partido partido2;
@@ -74,10 +75,12 @@ class AdminServiceTest {
         when(partidoRepository.findByEstado(EstadoPartido.DISPONIBLE)).thenReturn(partidos);
         when(partidoService.obtenerPartidoPorId(any(Long.class))).thenReturn(partidoResponseDTO);
 
-        List<PartidoResponseDTO> result = adminService.obtenerPartidosConCapacidadBaja(null);
+        PartidosResponseDTO result = adminService.obtenerPartidosConCapacidadBaja(null);
 
         assertNotNull(result);
-        assertEquals(2, result.size());
+        assertNotNull(result.getPartidos());
+        assertEquals(2, result.getPartidos().size());
+        assertEquals(2, result.getTotal());
         verify(partidoRepository, times(1)).findByEstado(EstadoPartido.DISPONIBLE);
     }
 
@@ -87,10 +90,12 @@ class AdminServiceTest {
         when(partidoRepository.findByEstado(EstadoPartido.DISPONIBLE)).thenReturn(partidos);
         when(partidoService.obtenerPartidoPorId(2L)).thenReturn(partidoResponseDTO);
 
-        List<PartidoResponseDTO> result = adminService.obtenerPartidosConCapacidadBaja(1);
+        PartidosResponseDTO result = adminService.obtenerPartidosConCapacidadBaja(1);
 
         assertNotNull(result);
-        assertEquals(1, result.size());
+        assertNotNull(result.getPartidos());
+        assertEquals(1, result.getPartidos().size());
+        assertEquals(1, result.getTotal());
         verify(partidoRepository, times(1)).findByEstado(EstadoPartido.DISPONIBLE);
     }
 
@@ -111,10 +116,12 @@ class AdminServiceTest {
         when(partidoRepository.findByEstado(EstadoPartido.DISPONIBLE))
                 .thenReturn(Arrays.asList(partidoAltaCapacidad));
 
-        List<PartidoResponseDTO> result = adminService.obtenerPartidosConCapacidadBaja(5);
+        PartidosResponseDTO result = adminService.obtenerPartidosConCapacidadBaja(5);
 
         assertNotNull(result);
-        assertTrue(result.isEmpty());
+        assertNotNull(result.getPartidos());
+        assertTrue(result.getPartidos().isEmpty());
+        assertEquals(0, result.getTotal());
     }
 
     @Test
@@ -125,11 +132,13 @@ class AdminServiceTest {
         when(partidoService.obtenerPartidoPorId(1L)).thenReturn(partidoResponseDTO);
         when(partidoService.obtenerPartidoPorId(2L)).thenReturn(partidoResponseDTO);
 
-        List<PartidoResponseDTO> result = adminService.obtenerPartidosConCapacidadBaja(5);
+        PartidosResponseDTO result = adminService.obtenerPartidosConCapacidadBaja(5);
 
         assertNotNull(result);
+        assertNotNull(result.getPartidos());
         // El partido con menos capacidad disponible debería estar primero
         verify(partidoService, atLeastOnce()).obtenerPartidoPorId(any(Long.class));
     }
 }
+
 

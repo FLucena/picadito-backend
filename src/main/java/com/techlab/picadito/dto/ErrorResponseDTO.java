@@ -9,6 +9,7 @@ public class ErrorResponseDTO {
     private String error;
     private String message;
     private String path;
+    private String correlationId;
     private Map<String, String> validationErrors;
 
     public ErrorResponseDTO() {
@@ -23,7 +24,6 @@ public class ErrorResponseDTO {
         this.path = path;
     }
 
-    // Getters y Setters
     public LocalDateTime getTimestamp() {
         return timestamp;
     }
@@ -70,6 +70,14 @@ public class ErrorResponseDTO {
 
     public void setValidationErrors(Map<String, String> validationErrors) {
         this.validationErrors = validationErrors;
+    }
+
+    public String getCorrelationId() {
+        return correlationId;
+    }
+
+    public void setCorrelationId(String correlationId) {
+        this.correlationId = correlationId;
     }
 }
 

@@ -2,8 +2,8 @@ package com.techlab.picadito.config;
 
 import com.techlab.picadito.model.EstadoPartido;
 import com.techlab.picadito.model.Partido;
-import com.techlab.picadito.repository.PartidoRepository;
-import com.techlab.picadito.service.AlertaService;
+import com.techlab.picadito.partido.PartidoRepository;
+import com.techlab.picadito.alerta.AlertaService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

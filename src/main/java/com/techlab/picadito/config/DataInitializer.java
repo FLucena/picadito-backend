@@ -2,10 +2,11 @@ package com.techlab.picadito.config;
 
 import com.techlab.picadito.model.Categoria;
 import com.techlab.picadito.model.Usuario;
-import com.techlab.picadito.repository.CategoriaRepository;
-import com.techlab.picadito.repository.UsuarioRepository;
+import com.techlab.picadito.categoria.CategoriaRepository;
+import com.techlab.picadito.usuario.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -14,6 +15,7 @@ public class DataInitializer implements CommandLineRunner {
     
     private final UsuarioRepository usuarioRepository;
     private final CategoriaRepository categoriaRepository;
+    private final PasswordEncoder passwordEncoder;
     
     @Override
     public void run(String... args) {
@@ -30,6 +32,7 @@ public class DataInitializer implements CommandLineRunner {
         Usuario admin = new Usuario();
         admin.setNombre("Admin");
         admin.setEmail("admin@picadito.com");
+        admin.setPassword(passwordEncoder.encode("admin123"));
         admin.setRol(Usuario.RolUsuario.ADMIN);
         admin.setActivo(true);
         usuarioRepository.save(admin);
@@ -37,6 +40,7 @@ public class DataInitializer implements CommandLineRunner {
         Usuario cliente = new Usuario();
         cliente.setNombre("Cliente Demo");
         cliente.setEmail("cliente@picadito.com");
+        cliente.setPassword(passwordEncoder.encode("cliente123"));
         cliente.setRol(Usuario.RolUsuario.CLIENTE);
         cliente.setActivo(true);
         usuarioRepository.save(cliente);

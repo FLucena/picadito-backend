@@ -3,9 +3,10 @@ package com.techlab.picadito.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techlab.picadito.dto.ParticipanteDTO;
 import com.techlab.picadito.dto.ParticipanteResponseDTO;
+import com.techlab.picadito.dto.ParticipantesResponseDTO;
 import com.techlab.picadito.model.Nivel;
 import com.techlab.picadito.model.Posicion;
-import com.techlab.picadito.service.ParticipanteService;
+import com.techlab.picadito.participante.ParticipanteService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +27,7 @@ import static org.mockito.Mockito.times;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(ParticipanteController.class)
+@WebMvcTest(com.techlab.picadito.participante.ParticipanteController.class)
 class ParticipanteControllerTest {
 
     @Autowired
@@ -89,13 +90,15 @@ class ParticipanteControllerTest {
     @Test
     void obtenerParticipantesPorPartido_WithValidId_ShouldReturnList() throws Exception {
         List<ParticipanteResponseDTO> participantes = Arrays.asList(participanteResponse);
-        when(participanteService.obtenerParticipantesPorPartido(1L)).thenReturn(participantes);
+        ParticipantesResponseDTO participantesResponse = new ParticipantesResponseDTO(participantes);
+        when(participanteService.obtenerParticipantesPorPartido(1L)).thenReturn(participantesResponse);
 
         mockMvc.perform(get("/api/partidos/1/participantes"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].nombre").value("Juan Pérez"));
+                .andExpect(jsonPath("$.participantes[0].id").value(1))
+                .andExpect(jsonPath("$.participantes[0].nombre").value("Juan Pérez"))
+                .andExpect(jsonPath("$.total").value(1));
     }
 
     @Test
@@ -123,4 +126,5 @@ class ParticipanteControllerTest {
                 .andExpect(status().isBadRequest());
     }
 }
+
 

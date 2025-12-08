@@ -3,8 +3,9 @@ package com.techlab.picadito.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techlab.picadito.dto.AlertaDTO;
 import com.techlab.picadito.dto.AlertaResponseDTO;
+import com.techlab.picadito.dto.AlertasResponseDTO;
 import com.techlab.picadito.model.TipoAlerta;
-import com.techlab.picadito.service.AlertaService;
+import com.techlab.picadito.alerta.AlertaService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +23,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(AlertaController.class)
+@WebMvcTest(com.techlab.picadito.alerta.AlertaController.class)
 class AlertaControllerTest {
 
     @Autowired
@@ -59,24 +60,28 @@ class AlertaControllerTest {
     @Test
     void obtenerPorUsuario_ShouldReturnListOfAlertas() throws Exception {
         List<AlertaResponseDTO> alertas = Arrays.asList(alertaResponse);
-        when(alertaService.obtenerPorUsuario(1L)).thenReturn(alertas);
+        AlertasResponseDTO alertasResponse = new AlertasResponseDTO(alertas);
+        when(alertaService.obtenerPorUsuario(1L)).thenReturn(alertasResponse);
 
         mockMvc.perform(get("/api/alertas/usuario/1"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].tipo").value("CUPOS_BAJOS"));
+                .andExpect(jsonPath("$.alertas[0].id").value(1))
+                .andExpect(jsonPath("$.alertas[0].tipo").value("CUPOS_BAJOS"))
+                .andExpect(jsonPath("$.total").value(1));
     }
 
     @Test
     void obtenerNoLeidasPorUsuario_ShouldReturnListOfUnreadAlertas() throws Exception {
         List<AlertaResponseDTO> alertas = Arrays.asList(alertaResponse);
-        when(alertaService.obtenerNoLeidasPorUsuario(1L)).thenReturn(alertas);
+        AlertasResponseDTO alertasResponse = new AlertasResponseDTO(alertas);
+        when(alertaService.obtenerNoLeidasPorUsuario(1L)).thenReturn(alertasResponse);
 
         mockMvc.perform(get("/api/alertas/usuario/1/no-leidas"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(jsonPath("$[0].leida").value(false));
+                .andExpect(jsonPath("$.alertas[0].leida").value(false))
+                .andExpect(jsonPath("$.total").value(1));
     }
 
     @Test
@@ -110,4 +115,5 @@ class AlertaControllerTest {
                 .andExpect(status().isNoContent());
     }
 }
+
 

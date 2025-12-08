@@ -27,7 +27,6 @@ public class Equipo {
     )
     private List<Participante> participantes = new ArrayList<>();
 
-    // Getters y Setters
     public Long getId() {
         return id;
     }

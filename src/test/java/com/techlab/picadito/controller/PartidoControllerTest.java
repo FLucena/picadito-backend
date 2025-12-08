@@ -1,15 +1,17 @@
 package com.techlab.picadito.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.techlab.picadito.dto.PageResponseDTO;
 import com.techlab.picadito.dto.PartidoDTO;
 import com.techlab.picadito.dto.PartidoResponseDTO;
 import com.techlab.picadito.model.EstadoPartido;
-import com.techlab.picadito.service.PartidoService;
+import com.techlab.picadito.partido.PartidoService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -24,7 +26,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(PartidoController.class)
+@WebMvcTest(com.techlab.picadito.partido.PartidoController.class)
 class PartidoControllerTest {
 
     @Autowired
@@ -63,24 +65,30 @@ class PartidoControllerTest {
     @Test
     void obtenerTodosLosPartidos_ShouldReturnListOfPartidos() throws Exception {
         List<PartidoResponseDTO> partidos = Arrays.asList(partidoResponse);
-        when(partidoService.obtenerTodosLosPartidos()).thenReturn(partidos);
+        PageResponseDTO<PartidoResponseDTO> pageResponse = PageResponseDTO.of(partidos, 0, 20, 1);
+        when(partidoService.obtenerTodosLosPartidos(any(Pageable.class))).thenReturn(pageResponse);
 
         mockMvc.perform(get("/api/partidos"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].titulo").value("Partido de Prueba"));
+                .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.content[0].titulo").value("Partido de Prueba"))
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(20));
     }
 
     @Test
     void obtenerPartidosDisponibles_ShouldReturnAvailablePartidos() throws Exception {
         List<PartidoResponseDTO> partidos = Arrays.asList(partidoResponse);
-        when(partidoService.obtenerPartidosDisponibles()).thenReturn(partidos);
+        PageResponseDTO<PartidoResponseDTO> pageResponse = PageResponseDTO.of(partidos, 0, 20, 1);
+        when(partidoService.obtenerPartidosDisponibles(any(Pageable.class))).thenReturn(pageResponse);
 
         mockMvc.perform(get("/api/partidos/disponibles"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(jsonPath("$[0].id").value(1));
+                .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.totalElements").value(1));
     }
 
     @Test
@@ -155,4 +163,5 @@ class PartidoControllerTest {
         verify(partidoService).eliminarPartido(1L);
     }
 }
+
 

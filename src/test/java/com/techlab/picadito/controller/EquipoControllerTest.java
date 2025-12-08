@@ -1,7 +1,8 @@
 package com.techlab.picadito.controller;
 
 import com.techlab.picadito.dto.EquipoResponseDTO;
-import com.techlab.picadito.service.EquipoService;
+import com.techlab.picadito.dto.EquiposResponseDTO;
+import com.techlab.picadito.equipo.EquipoService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +18,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(EquipoController.class)
+@WebMvcTest(com.techlab.picadito.equipo.EquipoController.class)
 class EquipoControllerTest {
 
     @Autowired
@@ -47,24 +48,28 @@ class EquipoControllerTest {
         equipo2.setCantidadParticipantes(11);
 
         List<EquipoResponseDTO> equipos = Arrays.asList(equipoResponse, equipo2);
-        when(equipoService.generarEquiposAutomaticos(1L)).thenReturn(equipos);
+        EquiposResponseDTO equiposResponse = new EquiposResponseDTO(equipos);
+        when(equipoService.generarEquiposAutomaticos(1L)).thenReturn(equiposResponse);
 
         mockMvc.perform(post("/api/equipos/partido/1/generar"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].nombre").value("Equipo A"));
+                .andExpect(jsonPath("$.equipos[0].id").value(1))
+                .andExpect(jsonPath("$.equipos[0].nombre").value("Equipo A"))
+                .andExpect(jsonPath("$.total").value(2));
     }
 
     @Test
     void obtenerEquiposPorPartido_ShouldReturnListOfEquipos() throws Exception {
         List<EquipoResponseDTO> equipos = Arrays.asList(equipoResponse);
-        when(equipoService.obtenerEquiposPorPartido(1L)).thenReturn(equipos);
+        EquiposResponseDTO equiposResponse = new EquiposResponseDTO(equipos);
+        when(equipoService.obtenerEquiposPorPartido(1L)).thenReturn(equiposResponse);
 
         mockMvc.perform(get("/api/equipos/partido/1"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(jsonPath("$[0].id").value(1));
+                .andExpect(jsonPath("$.equipos[0].id").value(1))
+                .andExpect(jsonPath("$.total").value(1));
     }
 
     @Test
@@ -84,4 +89,5 @@ class EquipoControllerTest {
                 .andExpect(status().isNoContent());
     }
 }
+
 

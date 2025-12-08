@@ -8,7 +8,9 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "usuarios")
+@Table(name = "usuarios", indexes = {
+    @Index(name = "idx_usuarios_email", columnList = "email", unique = true)
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -23,6 +25,9 @@ public class Usuario {
     
     @Column(nullable = false, unique = true, length = 100)
     private String email;
+    
+    @Column(nullable = false, length = 255)
+    private String password;
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)

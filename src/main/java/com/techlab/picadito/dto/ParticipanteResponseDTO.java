@@ -13,7 +13,6 @@ public class ParticipanteResponseDTO {
     private Nivel nivel;
     private LocalDateTime fechaInscripcion;
 
-    // Getters y Setters
     public Long getId() {
         return id;
     }

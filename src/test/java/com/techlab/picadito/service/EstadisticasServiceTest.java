@@ -2,10 +2,10 @@ package com.techlab.picadito.service;
 
 import com.techlab.picadito.dto.EstadisticasDTO;
 import com.techlab.picadito.model.*;
-import com.techlab.picadito.repository.PartidoRepository;
-import com.techlab.picadito.repository.ReservaRepository;
-import com.techlab.picadito.repository.SedeRepository;
-import com.techlab.picadito.repository.UsuarioRepository;
+import com.techlab.picadito.partido.PartidoRepository;
+import com.techlab.picadito.reserva.ReservaRepository;
+import com.techlab.picadito.sede.SedeRepository;
+import com.techlab.picadito.usuario.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -147,4 +147,5 @@ class EstadisticasServiceTest {
         assertEquals(0L, result.getTotalUsuarios());
     }
 }
+
 

@@ -16,7 +16,6 @@ public class EstadisticasDTO {
     private Map<String, Long> partidosPorCategoria;
     private Double tasaOcupacionPromedio;
 
-    // Getters y Setters
     public Long getTotalPartidos() {
         return totalPartidos;
     }

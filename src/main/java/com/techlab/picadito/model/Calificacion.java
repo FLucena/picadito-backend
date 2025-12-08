@@ -8,9 +8,14 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "calificaciones", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"usuario_id", "partido_id"})
-})
+@Table(name = "calificaciones", 
+    uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"usuario_id", "partido_id"})
+    },
+    indexes = {
+        @Index(name = "idx_calificaciones_partido_id", columnList = "partido_id"),
+        @Index(name = "idx_calificaciones_usuario_id", columnList = "usuario_id")
+    })
 public class Calificacion {
 
     @Id
@@ -43,7 +48,6 @@ public class Calificacion {
         fechaCreacion = LocalDateTime.now();
     }
 
-    // Getters y Setters
     public Long getId() {
         return id;
     }

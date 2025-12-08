@@ -39,7 +39,6 @@ public class PartidoDTO {
 
     private List<Long> categoriaIds;
 
-    // Getters y Setters
     public String getTitulo() {
         return titulo;
     }

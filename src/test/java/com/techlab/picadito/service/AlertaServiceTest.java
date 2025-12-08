@@ -2,12 +2,13 @@ package com.techlab.picadito.service;
 
 import com.techlab.picadito.dto.AlertaDTO;
 import com.techlab.picadito.dto.AlertaResponseDTO;
+import com.techlab.picadito.dto.AlertasResponseDTO;
 import com.techlab.picadito.exception.ResourceNotFoundException;
 import com.techlab.picadito.model.Alerta;
 import com.techlab.picadito.model.Partido;
 import com.techlab.picadito.model.TipoAlerta;
 import com.techlab.picadito.model.Usuario;
-import com.techlab.picadito.repository.AlertaRepository;
+import com.techlab.picadito.alerta.AlertaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,13 +33,13 @@ class AlertaServiceTest {
     private AlertaRepository alertaRepository;
 
     @Mock
-    private UsuarioService usuarioService;
+    private com.techlab.picadito.usuario.UsuarioService usuarioService;
 
     @Mock
-    private PartidoService partidoService;
+    private com.techlab.picadito.partido.PartidoService partidoService;
 
     @InjectMocks
-    private AlertaService alertaService;
+    private com.techlab.picadito.alerta.AlertaService alertaService;
 
     private Alerta alerta;
     private AlertaDTO alertaDTO;
@@ -75,10 +76,12 @@ class AlertaServiceTest {
         List<Alerta> alertas = Arrays.asList(alerta);
         when(alertaRepository.findByUsuarioIdOrderByFechaCreacionDesc(1L)).thenReturn(alertas);
 
-        List<AlertaResponseDTO> result = alertaService.obtenerPorUsuario(1L);
+        AlertasResponseDTO result = alertaService.obtenerPorUsuario(1L);
 
         assertNotNull(result);
-        assertEquals(1, result.size());
+        assertNotNull(result.getAlertas());
+        assertEquals(1, result.getAlertas().size());
+        assertEquals(1, result.getTotal());
         verify(alertaRepository, times(1)).findByUsuarioIdOrderByFechaCreacionDesc(1L);
     }
 
@@ -87,10 +90,12 @@ class AlertaServiceTest {
         List<Alerta> alertas = Arrays.asList(alerta);
         when(alertaRepository.findByUsuarioIdAndLeidaFalseOrderByFechaCreacionDesc(1L)).thenReturn(alertas);
 
-        List<AlertaResponseDTO> result = alertaService.obtenerNoLeidasPorUsuario(1L);
+        AlertasResponseDTO result = alertaService.obtenerNoLeidasPorUsuario(1L);
 
         assertNotNull(result);
-        assertEquals(1, result.size());
+        assertNotNull(result.getAlertas());
+        assertEquals(1, result.getAlertas().size());
+        assertEquals(1, result.getTotal());
         verify(alertaRepository, times(1)).findByUsuarioIdAndLeidaFalseOrderByFechaCreacionDesc(1L);
     }
 
@@ -233,4 +238,5 @@ class AlertaServiceTest {
         verify(alertaRepository, never()).deleteAll(any());
     }
 }
+
 

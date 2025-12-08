@@ -9,7 +9,12 @@ import java.util.List;
 import java.util.Set;
 
 @Entity
-@Table(name = "partidos")
+@Table(name = "partidos", indexes = {
+    @Index(name = "idx_partidos_estado", columnList = "estado"),
+    @Index(name = "idx_partidos_fecha_hora", columnList = "fechaHora"),
+    @Index(name = "idx_partidos_estado_fecha", columnList = "estado, fechaHora"),
+    @Index(name = "idx_partidos_sede_id", columnList = "sede_id")
+})
 public class Partido {
 
     @Id
@@ -84,7 +89,6 @@ public class Partido {
         fechaCreacion = LocalDateTime.now();
     }
 
-    // Getters y Setters
     public Long getId() {
         return id;
     }

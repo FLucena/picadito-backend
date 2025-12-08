@@ -1,6 +1,7 @@
 package com.techlab.picadito.service;
 
 import com.techlab.picadito.dto.EquipoResponseDTO;
+import com.techlab.picadito.dto.EquiposResponseDTO;
 import com.techlab.picadito.exception.BusinessException;
 import com.techlab.picadito.exception.ResourceNotFoundException;
 import com.techlab.picadito.model.Equipo;
@@ -8,7 +9,7 @@ import com.techlab.picadito.model.Nivel;
 import com.techlab.picadito.model.Participante;
 import com.techlab.picadito.model.Partido;
 import com.techlab.picadito.model.Posicion;
-import com.techlab.picadito.repository.EquipoRepository;
+import com.techlab.picadito.equipo.EquipoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,10 +34,10 @@ class EquipoServiceTest {
     private EquipoRepository equipoRepository;
 
     @Mock
-    private PartidoService partidoService;
+    private com.techlab.picadito.partido.PartidoService partidoService;
 
     @InjectMocks
-    private EquipoService equipoService;
+    private com.techlab.picadito.equipo.EquipoService equipoService;
 
     private Partido partido;
     private List<Participante> participantes;
@@ -71,10 +72,12 @@ class EquipoServiceTest {
             return equipo;
         });
 
-        List<EquipoResponseDTO> result = equipoService.generarEquiposAutomaticos(1L);
+        EquiposResponseDTO result = equipoService.generarEquiposAutomaticos(1L);
 
         assertNotNull(result);
-        assertEquals(2, result.size());
+        assertNotNull(result.getEquipos());
+        assertEquals(2, result.getEquipos().size());
+        assertEquals(2, result.getTotal());
         verify(equipoRepository, times(2)).save(any(Equipo.class));
     }
 
@@ -107,9 +110,10 @@ class EquipoServiceTest {
             return equipo;
         });
 
-        List<EquipoResponseDTO> result = equipoService.generarEquiposAutomaticos(1L);
+        EquiposResponseDTO result = equipoService.generarEquiposAutomaticos(1L);
 
         assertNotNull(result);
+        assertNotNull(result.getEquipos());
         verify(equipoRepository, times(1)).deleteAll(equiposExistentes);
         verify(equipoRepository, times(2)).save(any(Equipo.class));
     }
@@ -124,10 +128,12 @@ class EquipoServiceTest {
 
         when(equipoRepository.findByPartidoId(1L)).thenReturn(equipos);
 
-        List<EquipoResponseDTO> result = equipoService.obtenerEquiposPorPartido(1L);
+        EquiposResponseDTO result = equipoService.obtenerEquiposPorPartido(1L);
 
         assertNotNull(result);
-        assertEquals(1, result.size());
+        assertNotNull(result.getEquipos());
+        assertEquals(1, result.getEquipos().size());
+        assertEquals(1, result.getTotal());
         verify(equipoRepository, times(1)).findByPartidoId(1L);
     }
 
@@ -179,4 +185,5 @@ class EquipoServiceTest {
         verify(equipoRepository, never()).deleteAll(any());
     }
 }
+
 

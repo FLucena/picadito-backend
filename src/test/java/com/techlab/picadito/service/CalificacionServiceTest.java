@@ -2,13 +2,14 @@ package com.techlab.picadito.service;
 
 import com.techlab.picadito.dto.CalificacionDTO;
 import com.techlab.picadito.dto.CalificacionResponseDTO;
+import com.techlab.picadito.dto.CalificacionesResponseDTO;
 import com.techlab.picadito.exception.BusinessException;
 import com.techlab.picadito.exception.ResourceNotFoundException;
 import com.techlab.picadito.model.Calificacion;
 import com.techlab.picadito.model.EstadoPartido;
 import com.techlab.picadito.model.Partido;
 import com.techlab.picadito.model.Usuario;
-import com.techlab.picadito.repository.CalificacionRepository;
+import com.techlab.picadito.calificacion.CalificacionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,13 +33,13 @@ class CalificacionServiceTest {
     private CalificacionRepository calificacionRepository;
 
     @Mock
-    private UsuarioService usuarioService;
+    private com.techlab.picadito.usuario.UsuarioService usuarioService;
 
     @Mock
-    private PartidoService partidoService;
+    private com.techlab.picadito.partido.PartidoService partidoService;
 
     @InjectMocks
-    private CalificacionService calificacionService;
+    private com.techlab.picadito.calificacion.CalificacionService calificacionService;
 
     private Calificacion calificacion;
     private CalificacionDTO calificacionDTO;
@@ -110,10 +111,12 @@ class CalificacionServiceTest {
         List<Calificacion> calificaciones = Arrays.asList(calificacion);
         when(calificacionRepository.findByPartidoIdOrderByFechaCreacionDesc(1L)).thenReturn(calificaciones);
 
-        List<CalificacionResponseDTO> result = calificacionService.obtenerPorPartido(1L);
+        CalificacionesResponseDTO result = calificacionService.obtenerPorPartido(1L);
 
         assertNotNull(result);
-        assertEquals(1, result.size());
+        assertNotNull(result.getCalificaciones());
+        assertEquals(1, result.getCalificaciones().size());
+        assertEquals(1, result.getTotal());
         verify(calificacionRepository, times(1)).findByPartidoIdOrderByFechaCreacionDesc(1L);
     }
 
@@ -197,4 +200,5 @@ class CalificacionServiceTest {
         });
     }
 }
+
 

@@ -1,8 +1,9 @@
 package com.techlab.picadito.controller;
 
 import com.techlab.picadito.dto.ReservaDTO;
+import com.techlab.picadito.dto.ReservasResponseDTO;
 import com.techlab.picadito.model.Reserva;
-import com.techlab.picadito.service.ReservaService;
+import com.techlab.picadito.reserva.ReservaService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +22,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(ReservaController.class)
+@WebMvcTest(com.techlab.picadito.reserva.ReservaController.class)
 class ReservaControllerTest {
 
     @Autowired
@@ -45,13 +46,15 @@ class ReservaControllerTest {
     @Test
     void obtenerTodas_ShouldReturnListOfReservas() throws Exception {
         List<ReservaDTO> reservas = Arrays.asList(reservaDTO);
-        when(reservaService.obtenerTodos()).thenReturn(reservas);
+        ReservasResponseDTO reservasResponse = new ReservasResponseDTO(reservas);
+        when(reservaService.obtenerTodos()).thenReturn(reservasResponse);
 
         mockMvc.perform(get("/api/reservas"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].usuarioId").value(1));
+                .andExpect(jsonPath("$.reservas[0].id").value(1))
+                .andExpect(jsonPath("$.reservas[0].usuarioId").value(1))
+                .andExpect(jsonPath("$.total").value(1));
     }
 
     @Test
@@ -74,12 +77,14 @@ class ReservaControllerTest {
     @Test
     void obtenerPorUsuario_WithValidId_ShouldReturnUserReservas() throws Exception {
         List<ReservaDTO> reservas = Arrays.asList(reservaDTO);
-        when(reservaService.obtenerPorUsuario(1L)).thenReturn(reservas);
+        ReservasResponseDTO reservasResponse = new ReservasResponseDTO(reservas);
+        when(reservaService.obtenerPorUsuario(1L)).thenReturn(reservasResponse);
 
         mockMvc.perform(get("/api/reservas/usuario/1"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(jsonPath("$[0].id").value(1));
+                .andExpect(jsonPath("$.reservas[0].id").value(1))
+                .andExpect(jsonPath("$.total").value(1));
     }
 
     @Test
@@ -155,4 +160,5 @@ class ReservaControllerTest {
                 .andExpect(status().isBadRequest());
     }
 }
+
 

@@ -1,5 +1,6 @@
 package com.techlab.picadito.service;
 
+import com.techlab.picadito.dto.PageResponseDTO;
 import com.techlab.picadito.dto.PartidoDTO;
 import com.techlab.picadito.dto.PartidoResponseDTO;
 import com.techlab.picadito.exception.BusinessException;
@@ -7,9 +8,13 @@ import com.techlab.picadito.exception.ResourceNotFoundException;
 import com.techlab.picadito.exception.ValidationException;
 import com.techlab.picadito.model.EstadoPartido;
 import com.techlab.picadito.model.Partido;
-import com.techlab.picadito.repository.PartidoRepository;
-import com.techlab.picadito.repository.SedeRepository;
+import com.techlab.picadito.partido.PartidoRepository;
+import com.techlab.picadito.sede.SedeRepository;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,19 +41,19 @@ class PartidoServiceTest {
     private SedeRepository sedeRepository;
 
     @Mock
-    private CategoriaService categoriaService;
+    private com.techlab.picadito.categoria.CategoriaService categoriaService;
 
     @Mock
-    private AlertaService alertaService;
+    private com.techlab.picadito.alerta.AlertaService alertaService;
 
     @Mock
-    private CalificacionService calificacionService;
+    private com.techlab.picadito.calificacion.CalificacionService calificacionService;
 
     @Mock
-    private EquipoService equipoService;
+    private com.techlab.picadito.equipo.EquipoService equipoService;
 
     @InjectMocks
-    private PartidoService partidoService;
+    private com.techlab.picadito.partido.PartidoService partidoService;
 
     private Partido partido;
     private PartidoDTO partidoDTO;
@@ -73,16 +78,22 @@ class PartidoServiceTest {
     }
 
     @Test
+    @SuppressWarnings("null")
     void obtenerTodosLosPartidos_ShouldReturnListOfPartidos() {
         List<Partido> partidos = Arrays.asList(partido);
-        when(partidoRepository.findAll()).thenReturn(partidos);
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<Partido> partidosPage = new PageImpl<>(partidos, pageable, 1);
+        // Mock del método findAll de JpaRepository (sin Specification)
+        when(partidoRepository.findAll(pageable)).thenReturn(partidosPage);
 
-        List<PartidoResponseDTO> result = partidoService.obtenerTodosLosPartidos();
+        PageResponseDTO<PartidoResponseDTO> result = partidoService.obtenerTodosLosPartidos(pageable);
 
         assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals("Partido de Prueba", result.get(0).getTitulo());
-        verify(partidoRepository, times(1)).findAll();
+        assertNotNull(result.getContent());
+        assertEquals(1, result.getContent().size());
+        assertEquals("Partido de Prueba", result.getContent().get(0).getTitulo());
+        assertEquals(1, result.getTotalElements());
+        verify(partidoRepository, times(1)).findAll(pageable);
     }
 
     @Test
@@ -187,4 +198,5 @@ class PartidoServiceTest {
         verify(partidoRepository, times(1)).deleteById(1L);
     }
 }
+
 

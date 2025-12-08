@@ -5,8 +5,8 @@ import com.techlab.picadito.model.EstadoPartido;
 import com.techlab.picadito.model.Partido;
 import com.techlab.picadito.model.Reserva;
 import com.techlab.picadito.model.Usuario;
-import com.techlab.picadito.repository.PartidoRepository;
-import com.techlab.picadito.repository.ReservaRepository;
+import com.techlab.picadito.partido.PartidoRepository;
+import com.techlab.picadito.reserva.ReservaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,7 +30,7 @@ class ReporteServiceTest {
     private PartidoRepository partidoRepository;
 
     @InjectMocks
-    private ReporteService reporteService;
+    private com.techlab.picadito.service.ReporteService reporteService;
 
     private Reserva reserva;
     private Partido partido;
@@ -169,4 +169,5 @@ class ReporteServiceTest {
         assertNotNull(result.getDatos());
     }
 }
+
 

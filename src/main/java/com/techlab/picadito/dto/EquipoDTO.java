@@ -7,7 +7,6 @@ public class EquipoDTO {
     private String nombre;
     private List<Long> participanteIds;
 
-    // Getters y Setters
     public String getNombre() {
         return nombre;
     }

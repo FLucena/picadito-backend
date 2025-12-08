@@ -3,11 +3,12 @@ package com.techlab.picadito.service;
 import com.techlab.picadito.dto.LineaPartidoSeleccionadoDTO;
 import com.techlab.picadito.dto.PartidosSeleccionadosDTO;
 import com.techlab.picadito.dto.ReservaDTO;
+import com.techlab.picadito.dto.ReservasResponseDTO;
 import com.techlab.picadito.exception.BusinessException;
 import com.techlab.picadito.exception.ResourceNotFoundException;
 import com.techlab.picadito.model.*;
 import com.techlab.picadito.model.Participante;
-import com.techlab.picadito.repository.ReservaRepository;
+import com.techlab.picadito.reserva.ReservaRepository;
 import com.techlab.picadito.util.MapperUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,25 +35,25 @@ class ReservaServiceTest {
     private ReservaRepository reservaRepository;
 
     @Mock
-    private UsuarioService usuarioService;
+    private com.techlab.picadito.usuario.UsuarioService usuarioService;
 
     @Mock
-    private PartidoService partidoService;
+    private com.techlab.picadito.partido.PartidoService partidoService;
 
     @Mock
-    private PartidosSeleccionadosService partidosSeleccionadosService;
+    private com.techlab.picadito.partidosseleccionados.PartidosSeleccionadosService partidosSeleccionadosService;
 
     @Mock
-    private ParticipanteService participanteService;
+    private com.techlab.picadito.participante.ParticipanteService participanteService;
 
     @Mock
     private MapperUtil mapperUtil;
 
     @Mock
-    private AlertaService alertaService;
+    private com.techlab.picadito.alerta.AlertaService alertaService;
 
     @InjectMocks
-    private ReservaService reservaService;
+    private com.techlab.picadito.reserva.ReservaService reservaService;
 
     private Reserva reserva;
     private ReservaDTO reservaDTO;
@@ -112,14 +113,16 @@ class ReservaServiceTest {
     @Test
     void obtenerTodos_ShouldReturnListOfReservas() {
         List<Reserva> reservas = Arrays.asList(reserva);
-        when(reservaRepository.findAll()).thenReturn(reservas);
+        when(reservaRepository.findAllByOrderByFechaCreacionDesc()).thenReturn(reservas);
         when(mapperUtil.toReservaDTO(any(Reserva.class))).thenReturn(reservaDTO);
 
-        List<ReservaDTO> result = reservaService.obtenerTodos();
+        ReservasResponseDTO result = reservaService.obtenerTodos();
 
         assertNotNull(result);
-        assertEquals(1, result.size());
-        verify(reservaRepository, times(1)).findAll();
+        assertNotNull(result.getReservas());
+        assertEquals(1, result.getReservas().size());
+        assertEquals(1, result.getTotal());
+        verify(reservaRepository, times(1)).findAllByOrderByFechaCreacionDesc();
     }
 
     @Test
@@ -149,10 +152,12 @@ class ReservaServiceTest {
         when(reservaRepository.findByUsuarioIdOrderByFechaCreacionDesc(1L)).thenReturn(reservas);
         when(mapperUtil.toReservaDTO(any(Reserva.class))).thenReturn(reservaDTO);
 
-        List<ReservaDTO> result = reservaService.obtenerPorUsuario(1L);
+        ReservasResponseDTO result = reservaService.obtenerPorUsuario(1L);
 
         assertNotNull(result);
-        assertEquals(1, result.size());
+        assertNotNull(result.getReservas());
+        assertEquals(1, result.getReservas().size());
+        assertEquals(1, result.getTotal());
         verify(reservaRepository, times(1)).findByUsuarioIdOrderByFechaCreacionDesc(1L);
     }
 
@@ -240,4 +245,5 @@ class ReservaServiceTest {
         verify(reservaRepository, times(1)).findByUsuarioIdOrderByFechaCreacionDesc(1L);
     }
 }
+
 

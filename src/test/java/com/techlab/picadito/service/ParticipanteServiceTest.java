@@ -2,6 +2,7 @@ package com.techlab.picadito.service;
 
 import com.techlab.picadito.dto.ParticipanteDTO;
 import com.techlab.picadito.dto.ParticipanteResponseDTO;
+import com.techlab.picadito.dto.ParticipantesResponseDTO;
 import com.techlab.picadito.exception.BusinessException;
 import com.techlab.picadito.exception.ResourceNotFoundException;
 import com.techlab.picadito.model.EstadoPartido;
@@ -9,8 +10,8 @@ import com.techlab.picadito.model.Nivel;
 import com.techlab.picadito.model.Partido;
 import com.techlab.picadito.model.Participante;
 import com.techlab.picadito.model.Posicion;
-import com.techlab.picadito.repository.ParticipanteRepository;
-import com.techlab.picadito.repository.PartidoRepository;
+import com.techlab.picadito.participante.ParticipanteRepository;
+import com.techlab.picadito.partido.PartidoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,10 +38,10 @@ class ParticipanteServiceTest {
     private PartidoRepository partidoRepository;
 
     @Mock
-    private PartidoService partidoService;
+    private com.techlab.picadito.partido.PartidoService partidoService;
 
     @InjectMocks
-    private ParticipanteService participanteService;
+    private com.techlab.picadito.participante.ParticipanteService participanteService;
 
     private Partido partido;
     private Participante participante;
@@ -137,10 +138,12 @@ class ParticipanteServiceTest {
         when(partidoRepository.existsById(1L)).thenReturn(true);
         when(participanteRepository.findByPartidoId(1L)).thenReturn(participantes);
 
-        List<ParticipanteResponseDTO> result = participanteService.obtenerParticipantesPorPartido(1L);
+        ParticipantesResponseDTO result = participanteService.obtenerParticipantesPorPartido(1L);
 
         assertNotNull(result);
-        assertEquals(1, result.size());
+        assertNotNull(result.getParticipantes());
+        assertEquals(1, result.getParticipantes().size());
+        assertEquals(1, result.getTotal());
         verify(participanteRepository, times(1)).findByPartidoId(1L);
     }
 
@@ -200,4 +203,5 @@ class ParticipanteServiceTest {
         });
     }
 }
+
 

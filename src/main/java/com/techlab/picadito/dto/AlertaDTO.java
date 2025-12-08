@@ -15,7 +15,6 @@ public class AlertaDTO {
     private Long usuarioId;
     private Long partidoId;
 
-    // Getters y Setters
     public TipoAlerta getTipo() {
         return tipo;
     }

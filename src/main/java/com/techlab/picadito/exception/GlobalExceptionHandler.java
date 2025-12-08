@@ -3,6 +3,7 @@ package com.techlab.picadito.exception;
 import com.techlab.picadito.dto.ErrorResponseDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -21,12 +22,19 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    private static final String CORRELATION_ID_MDC_KEY = "correlationId";
+
+    private ErrorResponseDTO buildErrorResponse(int status, String error, String message, String path) {
+        ErrorResponseDTO errorResponse = new ErrorResponseDTO(status, error, message, path);
+        errorResponse.setCorrelationId(MDC.get(CORRELATION_ID_MDC_KEY));
+        return errorResponse;
+    }
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponseDTO> handleResourceNotFoundException(
             ResourceNotFoundException ex, WebRequest request) {
         logger.warn("Resource not found: {}", ex.getMessage());
-        ErrorResponseDTO error = new ErrorResponseDTO(
+        ErrorResponseDTO error = buildErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
                 "Not Found",
                 ex.getMessage(),
@@ -39,7 +47,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponseDTO> handleBusinessException(
             BusinessException ex, WebRequest request) {
         logger.warn("Business exception: {}", ex.getMessage());
-        ErrorResponseDTO error = new ErrorResponseDTO(
+        ErrorResponseDTO error = buildErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 "Business Error",
                 ex.getMessage(),
@@ -52,7 +60,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponseDTO> handleValidationException(
             ValidationException ex, WebRequest request) {
         logger.warn("Validation exception: {}", ex.getMessage());
-        ErrorResponseDTO error = new ErrorResponseDTO(
+        ErrorResponseDTO error = buildErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 "Validation Error",
                 ex.getMessage(),
@@ -73,7 +81,7 @@ public class GlobalExceptionHandler {
             validationErrors.put(fieldName, errorMessage);
         });
 
-        ErrorResponseDTO error = new ErrorResponseDTO(
+        ErrorResponseDTO error = buildErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 "Validation Error",
                 "Error de validación en los campos enviados",
@@ -87,7 +95,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponseDTO> handleIllegalArgumentException(
             IllegalArgumentException ex, WebRequest request) {
         logger.warn("Illegal argument: {}", ex.getMessage());
-        ErrorResponseDTO error = new ErrorResponseDTO(
+        ErrorResponseDTO error = buildErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 "Bad Request",
                 ex.getMessage(),
@@ -102,7 +110,7 @@ public class GlobalExceptionHandler {
         logger.warn("Method argument type mismatch: {}", ex.getMessage());
         String message = String.format("El parámetro '%s' tiene un valor inválido: '%s'. Se esperaba un tipo válido.",
                 ex.getName(), ex.getValue());
-        ErrorResponseDTO error = new ErrorResponseDTO(
+        ErrorResponseDTO error = buildErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 "Bad Request",
                 message,
@@ -115,7 +123,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponseDTO> handleOptimisticLockException(
             ObjectOptimisticLockingFailureException ex, WebRequest request) {
         logger.warn("Optimistic lock exception: {}", ex.getMessage());
-        ErrorResponseDTO error = new ErrorResponseDTO(
+        ErrorResponseDTO error = buildErrorResponse(
                 HttpStatus.CONFLICT.value(),
                 "Conflict",
                 "El recurso ha sido modificado por otro usuario. Por favor, recarga la página e intenta nuevamente.",
@@ -147,7 +155,7 @@ public class GlobalExceptionHandler {
             message += "Hay datos relacionados que deben eliminarse primero.";
         }
         
-        ErrorResponseDTO error = new ErrorResponseDTO(
+        ErrorResponseDTO error = buildErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 "Data Integrity Error",
                 message,
@@ -160,7 +168,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponseDTO> handleGlobalException(
             Exception ex, WebRequest request) {
         logger.error("Unexpected error occurred", ex);
-        ErrorResponseDTO error = new ErrorResponseDTO(
+        ErrorResponseDTO error = buildErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Internal Server Error",
                 "Ha ocurrido un error inesperado. Por favor, intente más tarde.",

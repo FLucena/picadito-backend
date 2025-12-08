@@ -2,7 +2,7 @@ package com.techlab.picadito.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techlab.picadito.dto.PartidoDTO;
-import com.techlab.picadito.repository.PartidoRepository;
+import com.techlab.picadito.partido.PartidoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -106,4 +106,5 @@ class PartidoIntegrationTest {
                 .andExpect(status().isNotFound());
     }
 }
+
 

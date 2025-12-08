@@ -1,7 +1,7 @@
 package com.techlab.picadito.controller;
 
 import com.techlab.picadito.dto.PartidosGuardadosResponseDTO;
-import com.techlab.picadito.service.PartidosGuardadosService;
+import com.techlab.picadito.partidosguardados.PartidosGuardadosService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +19,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(PartidosGuardadosController.class)
+@WebMvcTest(com.techlab.picadito.partidosguardados.PartidosGuardadosController.class)
 class PartidosGuardadosControllerTest {
 
     @Autowired
@@ -117,4 +117,5 @@ class PartidosGuardadosControllerTest {
                 .andExpect(status().isBadRequest());
     }
 }
+
 

@@ -2,12 +2,13 @@ package com.techlab.picadito.service;
 
 import com.techlab.picadito.dto.SedeDTO;
 import com.techlab.picadito.dto.SedeResponseDTO;
+import com.techlab.picadito.dto.SedesResponseDTO;
 import com.techlab.picadito.exception.BusinessException;
 import com.techlab.picadito.exception.ResourceNotFoundException;
 import com.techlab.picadito.model.Partido;
 import com.techlab.picadito.model.Sede;
-import com.techlab.picadito.repository.PartidoRepository;
-import com.techlab.picadito.repository.SedeRepository;
+import com.techlab.picadito.partido.PartidoRepository;
+import com.techlab.picadito.sede.SedeRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,7 +36,7 @@ class SedeServiceTest {
     private PartidoRepository partidoRepository;
 
     @InjectMocks
-    private SedeService sedeService;
+    private com.techlab.picadito.sede.SedeService sedeService;
 
     private Sede sede;
     private SedeDTO sedeDTO;
@@ -66,13 +67,15 @@ class SedeServiceTest {
     @Test
     void obtenerTodas_ShouldReturnAllSedes() {
         List<Sede> sedes = Arrays.asList(sede);
-        when(sedeRepository.findAll()).thenReturn(sedes);
+        when(sedeRepository.findAllByOrderByNombreAsc()).thenReturn(sedes);
 
-        List<SedeResponseDTO> result = sedeService.obtenerTodas();
+        SedesResponseDTO result = sedeService.obtenerTodas();
 
         assertNotNull(result);
-        assertEquals(1, result.size());
-        verify(sedeRepository, times(1)).findAll();
+        assertNotNull(result.getSedes());
+        assertEquals(1, result.getSedes().size());
+        assertEquals(1, result.getTotal());
+        verify(sedeRepository, times(1)).findAllByOrderByNombreAsc();
     }
 
     @Test
@@ -168,4 +171,5 @@ class SedeServiceTest {
         });
     }
 }
+
 

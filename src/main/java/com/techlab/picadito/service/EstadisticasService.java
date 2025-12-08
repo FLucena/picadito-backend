@@ -2,7 +2,10 @@ package com.techlab.picadito.service;
 
 import com.techlab.picadito.dto.EstadisticasDTO;
 import com.techlab.picadito.model.*;
-import com.techlab.picadito.repository.*;
+import com.techlab.picadito.partido.PartidoRepository;
+import com.techlab.picadito.reserva.ReservaRepository;
+import com.techlab.picadito.sede.SedeRepository;
+import com.techlab.picadito.usuario.UsuarioRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,9 +44,11 @@ public class EstadisticasService {
         estadisticas.setTotalUsuarios(usuarioRepository.count());
         
         // Calcular ingresos totales
-        Double ingresosTotales = reservaRepository.findAll().stream()
-                .filter(r -> r.getEstado() == Reserva.EstadoReserva.CONFIRMADO || 
-                           r.getEstado() == Reserva.EstadoReserva.FINALIZADO)
+        List<Reserva.EstadoReserva> estadosConIngresos = List.of(
+            Reserva.EstadoReserva.CONFIRMADO,
+            Reserva.EstadoReserva.FINALIZADO
+        );
+        Double ingresosTotales = reservaRepository.findByEstadoInOrderByFechaCreacionDesc(estadosConIngresos).stream()
                 .mapToDouble(Reserva::calcularTotal)
                 .sum();
         estadisticas.setIngresosTotales(ingresosTotales);
@@ -72,10 +77,7 @@ public class EstadisticasService {
         EstadisticasDTO estadisticas = new EstadisticasDTO();
         
         // Filtrar reservas por período
-        List<Reserva> reservasPeriodo = reservaRepository.findAll().stream()
-                .filter(r -> r.getFechaCreacion().isAfter(fechaInicio) && 
-                           r.getFechaCreacion().isBefore(fechaFin))
-                .collect(Collectors.toList());
+        List<Reserva> reservasPeriodo = reservaRepository.findByFechaCreacionBetweenOrderByFechaCreacionDesc(fechaInicio, fechaFin);
         
         estadisticas.setTotalReservas((long) reservasPeriodo.size());
         
@@ -87,10 +89,7 @@ public class EstadisticasService {
         estadisticas.setIngresosPorPeriodo(ingresosPeriodo);
         
         // Filtrar partidos por período
-        List<Partido> partidosPeriodo = partidoRepository.findAll().stream()
-                .filter(p -> p.getFechaCreacion().isAfter(fechaInicio) && 
-                           p.getFechaCreacion().isBefore(fechaFin))
-                .collect(Collectors.toList());
+        List<Partido> partidosPeriodo = partidoRepository.findByFechaCreacionBetweenOrderByFechaCreacionAsc(fechaInicio, fechaFin);
         
         estadisticas.setTotalPartidos((long) partidosPeriodo.size());
         
@@ -98,8 +97,7 @@ public class EstadisticasService {
     }
 
     private List<EstadisticasDTO.PartidoPopularDTO> obtenerPartidosPopulares() {
-        return partidoRepository.findAll().stream()
-                .filter(p -> p.getCantidadParticipantes() > 0)
+        return partidoRepository.findByCantidadParticipantesGreaterThan(0).stream()
                 .map(p -> {
                     EstadisticasDTO.PartidoPopularDTO dto = new EstadisticasDTO.PartidoPopularDTO();
                     dto.setPartidoId(p.getId());
@@ -116,15 +114,18 @@ public class EstadisticasService {
     }
 
     private List<EstadisticasDTO.UsuarioActivoDTO> obtenerUsuariosActivos() {
-        Map<Long, Long> reservasPorUsuario = reservaRepository.findAll().stream()
+        List<Reserva> todasLasReservas = reservaRepository.findAll();
+        Map<Long, Long> reservasPorUsuario = todasLasReservas.stream()
                 .collect(Collectors.groupingBy(
                         r -> r.getUsuario().getId(),
                         Collectors.counting()
                 ));
         
-        Map<Long, Double> gastosPorUsuario = reservaRepository.findAll().stream()
-                .filter(r -> r.getEstado() == Reserva.EstadoReserva.CONFIRMADO || 
-                           r.getEstado() == Reserva.EstadoReserva.FINALIZADO)
+        List<Reserva.EstadoReserva> estadosConIngresos = List.of(
+            Reserva.EstadoReserva.CONFIRMADO,
+            Reserva.EstadoReserva.FINALIZADO
+        );
+        Map<Long, Double> gastosPorUsuario = reservaRepository.findByEstadoInOrderByFechaCreacionDesc(estadosConIngresos).stream()
                 .collect(Collectors.groupingBy(
                         r -> r.getUsuario().getId(),
                         Collectors.summingDouble(Reserva::calcularTotal)
@@ -146,7 +147,8 @@ public class EstadisticasService {
     }
 
     private List<EstadisticasDTO.SedeUtilizadaDTO> obtenerSedesUtilizadas() {
-        Map<Long, Long> partidosPorSede = partidoRepository.findAll().stream()
+        List<Partido> todosLosPartidos = partidoRepository.findAll();
+        Map<Long, Long> partidosPorSede = todosLosPartidos.stream()
                 .filter(p -> p.getSede() != null)
                 .collect(Collectors.groupingBy(
                         p -> p.getSede().getId(),
@@ -168,8 +170,8 @@ public class EstadisticasService {
     }
 
     private Map<String, Long> obtenerPartidosPorCategoria() {
-        // Contar todas las relaciones partido-categoría (un partido puede tener múltiples categorías)
-        return partidoRepository.findAll().stream()
+        List<Partido> todosLosPartidos = partidoRepository.findAll();
+        return todosLosPartidos.stream()
                 .filter(p -> p.getCategorias() != null && !p.getCategorias().isEmpty())
                 .flatMap(p -> p.getCategorias().stream()
                         .map(c -> new AbstractMap.SimpleEntry<>(c.getNombre(), p.getId())))

@@ -10,7 +10,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "reservas")
+@Table(name = "reservas", indexes = {
+    @Index(name = "idx_reservas_usuario_id", columnList = "usuario_id"),
+    @Index(name = "idx_reservas_estado", columnList = "estado")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

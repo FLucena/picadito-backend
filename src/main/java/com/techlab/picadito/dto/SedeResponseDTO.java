@@ -13,7 +13,6 @@ public class SedeResponseDTO {
     private LocalDateTime fechaCreacion;
     private LocalDateTime fechaActualizacion;
 
-    // Getters y Setters
     public Long getId() {
         return id;
     }

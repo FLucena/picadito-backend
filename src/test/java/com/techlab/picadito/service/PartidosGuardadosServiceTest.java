@@ -8,9 +8,9 @@ import com.techlab.picadito.model.LineaPartidoGuardado;
 import com.techlab.picadito.model.Partido;
 import com.techlab.picadito.model.PartidosGuardados;
 import com.techlab.picadito.model.Usuario;
-import com.techlab.picadito.repository.PartidosGuardadosRepository;
-import com.techlab.picadito.repository.PartidoRepository;
-import com.techlab.picadito.repository.UsuarioRepository;
+import com.techlab.picadito.partidosguardados.PartidosGuardadosRepository;
+import com.techlab.picadito.partido.PartidoRepository;
+import com.techlab.picadito.usuario.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,7 +40,7 @@ class PartidosGuardadosServiceTest {
     private UsuarioRepository usuarioRepository;
 
     @InjectMocks
-    private PartidosGuardadosService partidosGuardadosService;
+    private com.techlab.picadito.partidosguardados.PartidosGuardadosService partidosGuardadosService;
 
     private Usuario usuario;
     private Partido partido;
@@ -217,4 +217,5 @@ class PartidosGuardadosServiceTest {
         });
     }
 }
+
 

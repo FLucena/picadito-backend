@@ -18,7 +18,6 @@ public class ParticipanteDTO {
 
     private Nivel nivel;
 
-    // Getters y Setters
     public String getNombre() {
         return nombre;
     }

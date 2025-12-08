@@ -8,7 +8,7 @@ import com.techlab.picadito.model.Partido;
 import com.techlab.picadito.model.Participante;
 import com.techlab.picadito.model.PartidosSeleccionados;
 import com.techlab.picadito.model.Usuario;
-import com.techlab.picadito.repository.PartidosSeleccionadosRepository;
+import com.techlab.picadito.partidosseleccionados.PartidosSeleccionadosRepository;
 import com.techlab.picadito.util.MapperUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,16 +32,16 @@ class PartidosSeleccionadosServiceTest {
     private PartidosSeleccionadosRepository partidosSeleccionadosRepository;
 
     @Mock
-    private UsuarioService usuarioService;
+    private com.techlab.picadito.usuario.UsuarioService usuarioService;
 
     @Mock
-    private PartidoService partidoService;
+    private com.techlab.picadito.partido.PartidoService partidoService;
 
     @Mock
     private MapperUtil mapperUtil;
 
     @InjectMocks
-    private PartidosSeleccionadosService partidosSeleccionadosService;
+    private com.techlab.picadito.partidosseleccionados.PartidosSeleccionadosService partidosSeleccionadosService;
 
     private PartidosSeleccionados partidosSeleccionados;
     private PartidosSeleccionadosDTO partidosSeleccionadosDTO;
@@ -262,4 +262,5 @@ class PartidosSeleccionadosServiceTest {
         verify(partidosSeleccionadosRepository, times(1)).save(any(PartidosSeleccionados.class));
     }
 }
+
 

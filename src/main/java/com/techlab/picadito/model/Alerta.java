@@ -4,7 +4,10 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "alertas")
+@Table(name = "alertas", indexes = {
+    @Index(name = "idx_alertas_usuario_id", columnList = "usuario_id"),
+    @Index(name = "idx_alertas_usuario_leida", columnList = "usuario_id, leida")
+})
 public class Alerta {
 
     @Id
@@ -37,7 +40,6 @@ public class Alerta {
         fechaCreacion = LocalDateTime.now();
     }
 
-    // Getters y Setters
     public Long getId() {
         return id;
     }

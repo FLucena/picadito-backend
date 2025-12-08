@@ -3,7 +3,8 @@ package com.techlab.picadito.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techlab.picadito.dto.SedeDTO;
 import com.techlab.picadito.dto.SedeResponseDTO;
-import com.techlab.picadito.service.SedeService;
+import com.techlab.picadito.dto.SedesResponseDTO;
+import com.techlab.picadito.sede.SedeService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +23,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(SedeController.class)
+@WebMvcTest(com.techlab.picadito.sede.SedeController.class)
 class SedeControllerTest {
 
     @Autowired
@@ -58,13 +59,15 @@ class SedeControllerTest {
     @Test
     void obtenerTodas_ShouldReturnListOfSedes() throws Exception {
         List<SedeResponseDTO> sedes = Arrays.asList(sedeResponse);
-        when(sedeService.obtenerTodas()).thenReturn(sedes);
+        SedesResponseDTO sedesResponse = new SedesResponseDTO(sedes);
+        when(sedeService.obtenerTodas()).thenReturn(sedesResponse);
 
         mockMvc.perform(get("/api/sedes"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].nombre").value("Estadio Olímpico"));
+                .andExpect(jsonPath("$.sedes[0].id").value(1))
+                .andExpect(jsonPath("$.sedes[0].nombre").value("Estadio Olímpico"))
+                .andExpect(jsonPath("$.total").value(1));
     }
 
     @Test
@@ -113,4 +116,5 @@ class SedeControllerTest {
                 .andExpect(status().isNoContent());
     }
 }
+
 

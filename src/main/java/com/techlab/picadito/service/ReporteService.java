@@ -3,8 +3,8 @@ package com.techlab.picadito.service;
 import com.techlab.picadito.dto.ReporteDTO;
 import com.techlab.picadito.model.EstadoPartido;
 import com.techlab.picadito.model.Reserva;
-import com.techlab.picadito.repository.PartidoRepository;
-import com.techlab.picadito.repository.ReservaRepository;
+import com.techlab.picadito.partido.PartidoRepository;
+import com.techlab.picadito.reserva.ReservaRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,10 +36,7 @@ public class ReporteService {
         reporte.setFechaFin(fechaFin);
         reporte.setFechaGeneracion(LocalDateTime.now());
         
-        List<Reserva> reservas = reservaRepository.findAll().stream()
-                .filter(r -> r.getFechaCreacion().isAfter(fechaInicio) && 
-                           r.getFechaCreacion().isBefore(fechaFin))
-                .collect(Collectors.toList());
+        List<Reserva> reservas = reservaRepository.findByFechaCreacionBetweenOrderByFechaCreacionDesc(fechaInicio, fechaFin);
         
         Map<String, Object> datos = new HashMap<>();
         datos.put("totalReservas", reservas.size());
@@ -73,10 +70,7 @@ public class ReporteService {
         reporte.setFechaFin(fechaFin);
         reporte.setFechaGeneracion(LocalDateTime.now());
         
-        List<com.techlab.picadito.model.Partido> partidos = partidoRepository.findAll().stream()
-                .filter(p -> p.getFechaCreacion().isAfter(fechaInicio) && 
-                           p.getFechaCreacion().isBefore(fechaFin))
-                .collect(Collectors.toList());
+        List<com.techlab.picadito.model.Partido> partidos = partidoRepository.findByFechaCreacionBetweenOrderByFechaCreacionAsc(fechaInicio, fechaFin);
         
         Map<String, Object> datos = new HashMap<>();
         datos.put("totalPartidos", partidos.size());
@@ -117,10 +111,7 @@ public class ReporteService {
         reporte.setFechaFin(fechaFin);
         reporte.setFechaGeneracion(LocalDateTime.now());
         
-        List<Reserva> reservas = reservaRepository.findAll().stream()
-                .filter(r -> r.getFechaCreacion().isAfter(fechaInicio) && 
-                           r.getFechaCreacion().isBefore(fechaFin))
-                .collect(Collectors.toList());
+        List<Reserva> reservas = reservaRepository.findByFechaCreacionBetweenOrderByFechaCreacionDesc(fechaInicio, fechaFin);
         
         Map<String, Object> datos = new HashMap<>();
         

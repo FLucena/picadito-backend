@@ -19,7 +19,6 @@ public class SedeDTO {
     @Size(max = 100, message = "Las coordenadas no pueden exceder 100 caracteres")
     private String coordenadas;
 
-    // Getters y Setters
     public String getNombre() {
         return nombre;
     }

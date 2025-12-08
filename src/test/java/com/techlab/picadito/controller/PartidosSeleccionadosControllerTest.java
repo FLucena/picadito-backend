@@ -2,7 +2,7 @@ package com.techlab.picadito.controller;
 
 import com.techlab.picadito.dto.LineaPartidoSeleccionadoDTO;
 import com.techlab.picadito.dto.PartidosSeleccionadosDTO;
-import com.techlab.picadito.service.PartidosSeleccionadosService;
+import com.techlab.picadito.partidosseleccionados.PartidosSeleccionadosService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +20,7 @@ import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(PartidosSeleccionadosController.class)
+@WebMvcTest(com.techlab.picadito.partidosseleccionados.PartidosSeleccionadosController.class)
 class PartidosSeleccionadosControllerTest {
 
     @Autowired
@@ -139,4 +139,5 @@ class PartidosSeleccionadosControllerTest {
                 .andExpect(status().isBadRequest());
     }
 }
+
 
