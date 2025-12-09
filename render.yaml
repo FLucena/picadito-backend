@@ -12,7 +12,7 @@ services:
         generateValue: true
       - key: CORS_ALLOWED_ORIGINS
         value: http://localhost:3000,http://localhost:5173
-      - key: SPRING_DATASOURCE_URL
+      - key: DATABASE_URL_RAW
         fromDatabase:
           name: picadito-db
           property: connectionString
@@ -24,10 +24,22 @@ services:
         fromDatabase:
           name: picadito-db
           property: password
+      - key: DATABASE_HOST
+        fromDatabase:
+          name: picadito-db
+          property: host
+      - key: DATABASE_PORT
+        fromDatabase:
+          name: picadito-db
+          property: port
+      - key: DATABASE_NAME
+        fromDatabase:
+          name: picadito-db
+          property: database
       - key: SPRING_DATASOURCE_DRIVER
-        value: com.mysql.cj.jdbc.Driver
+        value: org.postgresql.Driver
       - key: SPRING_JPA_DATABASE_PLATFORM
-        value: org.hibernate.dialect.MySQLDialect
+        value: org.hibernate.dialect.PostgreSQLDialect
       - key: SPRING_JPA_HIBERNATE_DDL_AUTO
         value: update
 

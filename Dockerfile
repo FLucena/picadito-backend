@@ -23,6 +23,10 @@ EXPOSE 8080
 # Variable de entorno para el puerto (Render lo asigna automáticamente)
 ENV PORT=8080
 
-# Comando para ejecutar la aplicación
-CMD ["sh", "-c", "java -jar -Dserver.port=$PORT target/picadito-backend-0.0.1-SNAPSHOT.jar"]
+# Copiar script de inicio
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
+# Comando para ejecutar la aplicación usando el script
+CMD ["/app/start.sh"]
 
