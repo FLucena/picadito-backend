@@ -39,5 +39,3 @@ databases:
   - name: picadito-db
     plan: free
     databaseName: picadito_db
-    databaseUser: picadito_user
-    databaseType: mysql
