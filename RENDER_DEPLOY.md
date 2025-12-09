@@ -34,13 +34,15 @@
      - Base de datos MySQL
      - Variables de entorno necesarias
 
-4. **Configurar variables de entorno**
+4. **⚠️ IMPORTANTE: Configurar variables de entorno**
    - Ve a tu servicio web en Render
-   - En "Environment", actualiza estas variables:
+   - En "Environment", **DEBES actualizar estas variables** (especialmente CORS):
      ```
      JWT_SECRET=tu_clave_secreta_super_segura_minimo_32_caracteres
-     CORS_ALLOWED_ORIGINS=https://tu-frontend.vercel.app,https://www.tu-frontend.com
+     CORS_ALLOWED_ORIGINS=https://unpicadito.vercel.app
      ```
+   - **CORS_ALLOWED_ORIGINS**: Reemplaza `https://your-frontend-domain.com` con la URL real de tu frontend en producción
+   - Sin esto, todas las peticiones del frontend serán rechazadas por CORS
 
 5. **Desplegar**
    - Render desplegará automáticamente
@@ -101,8 +103,8 @@ SPRING_JPA_HIBERNATE_DDL_AUTO=update
 # JWT (IMPORTANTE - cambia este valor)
 JWT_SECRET=tu_clave_secreta_super_segura_minimo_32_caracteres_aleatorios
 
-# CORS (reemplaza con tu URL de frontend)
-CORS_ALLOWED_ORIGINS=https://tu-frontend.vercel.app,https://www.tu-frontend.com
+# CORS (URL del frontend en producción)
+CORS_ALLOWED_ORIGINS=https://unpicadito.vercel.app
 ```
 
 #### 4. Conectar Base de Datos al Servicio
@@ -124,7 +126,7 @@ CORS_ALLOWED_ORIGINS=https://tu-frontend.vercel.app,https://www.tu-frontend.com
 ```bash
 SPRING_PROFILES_ACTIVE=prod
 JWT_SECRET=tu_clave_secreta_super_segura_minimo_32_caracteres
-CORS_ALLOWED_ORIGINS=https://tu-frontend.vercel.app
+CORS_ALLOWED_ORIGINS=https://unpicadito.vercel.app
 ```
 
 ### Variables de Base de Datos (se configuran automáticamente si conectas la DB)
@@ -140,6 +142,22 @@ SPRING_JPA_HIBERNATE_DDL_AUTO=update
 ```
 
 ## 📝 Notas Importantes
+
+### ⚠️ CORS - Configuración Crítica
+
+**IMPORTANTE**: El archivo `render.yaml` incluye `CORS_ALLOWED_ORIGINS` con un valor placeholder (`https://your-frontend-domain.com`). 
+
+**DEBES actualizar esta variable de entorno en Render** con la URL real de tu frontend en producción. Si no lo haces:
+- ❌ Todas las peticiones del frontend serán rechazadas por CORS
+- ❌ Tu aplicación no funcionará en producción
+- ❌ Verás errores como "CORS policy: No 'Access-Control-Allow-Origin' header"
+
+**Cómo configurarlo:**
+1. Ve a tu servicio en Render Dashboard
+2. Haz clic en "Environment"
+3. Busca `CORS_ALLOWED_ORIGINS`
+4. Cambia el valor a tu URL de frontend (ej: `https://tu-app.vercel.app`)
+5. Si tienes múltiples dominios, sepáralos con comas: `https://app.com,https://www.app.com`
 
 ### Límites del Plan Gratuito
 
