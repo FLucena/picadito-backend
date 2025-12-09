@@ -45,14 +45,24 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        // Endpoints públicos
+                        // Endpoints públicos (deben ir ANTES de las reglas generales)
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers("/api/partidos", "/api/partidos/disponibles", "/api/partidos/buscar", "/api/partidos/{id}").permitAll()
-                        .requestMatchers("/api/categorias", "/api/categorias/{id}").permitAll()
-                        .requestMatchers("/api/sedes", "/api/sedes/{id}").permitAll()
-                        // Endpoints que requieren autenticación
+                        // Endpoints públicos de partidos (específicos primero, cada uno en su propia línea)
+                        .requestMatchers("GET", "/api/partidos").permitAll()
+                        .requestMatchers("GET", "/api/partidos/disponibles").permitAll()
+                        .requestMatchers("POST", "/api/partidos/buscar").permitAll()
+                        .requestMatchers("GET", "/api/partidos/{id}").permitAll()
+                        .requestMatchers("GET", "/api/partidos/{id}/costo-por-jugador").permitAll()
+                        .requestMatchers("GET", "/api/partidos/categoria/{categoriaId}").permitAll()
+                        // Endpoints públicos de categorías
+                        .requestMatchers("GET", "/api/categorias").permitAll()
+                        .requestMatchers("GET", "/api/categorias/{id}").permitAll()
+                        // Endpoints públicos de sedes
+                        .requestMatchers("GET", "/api/sedes").permitAll()
+                        .requestMatchers("GET", "/api/sedes/{id}").permitAll()
+                        // Endpoints que requieren autenticación (reglas generales después de las específicas)
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/partidos/**").hasAnyRole("ADMIN", "CLIENTE")
                         .requestMatchers("/api/reservas/**").hasAnyRole("ADMIN", "CLIENTE")
