@@ -87,5 +87,27 @@ public class AdminController {
         ReporteDTO reporte = reporteService.generarReporteUsuarios(fechaInicio, fechaFin);
         return ResponseEntity.ok(reporte);
     }
+    
+    /**
+     * Cambia la contraseña de un usuario (solo admin)
+     */
+    @PutMapping("/usuarios/{usuarioId}/cambiar-password")
+    public ResponseEntity<Void> cambiarPasswordUsuario(
+            @PathVariable Long usuarioId,
+            @RequestParam String nuevaPassword) {
+        adminService.cambiarPasswordUsuario(usuarioId, nuevaPassword);
+        return ResponseEntity.ok().build();
+    }
+    
+    /**
+     * Cambia la contraseña de un usuario por email (solo admin)
+     */
+    @PutMapping("/usuarios/cambiar-password")
+    public ResponseEntity<Void> cambiarPasswordUsuarioPorEmail(
+            @RequestParam String email,
+            @RequestParam String nuevaPassword) {
+        adminService.cambiarPasswordUsuarioPorEmail(email, nuevaPassword);
+        return ResponseEntity.ok().build();
+    }
 }
 

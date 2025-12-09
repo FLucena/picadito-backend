@@ -5,11 +5,14 @@ import com.techlab.picadito.model.Usuario;
 import com.techlab.picadito.categoria.CategoriaRepository;
 import com.techlab.picadito.usuario.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 @Component
+@Profile("dev")
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
     
@@ -17,32 +20,53 @@ public class DataInitializer implements CommandLineRunner {
     private final CategoriaRepository categoriaRepository;
     private final PasswordEncoder passwordEncoder;
     
+    @Value("${app.demo.admin.password:AdminDemo2024!}")
+    private String adminPassword;
+    
+    @Value("${app.demo.cliente.password:ClienteDemo2024!}")
+    private String clientePassword;
+    
     @Override
     public void run(String... args) {
-        if (usuarioRepository.count() == 0) {
-            inicializarDatos();
-        }
+        inicializarOActualizarUsuarios();
         if (categoriaRepository.count() == 0) {
             inicializarCategorias();
         }
     }
     
-    private void inicializarDatos() {
-        // Crear usuarios de ejemplo
-        Usuario admin = new Usuario();
-        admin.setNombre("Admin");
-        admin.setEmail("admin@picadito.com");
-        admin.setPassword(passwordEncoder.encode("admin123"));
-        admin.setRol(Usuario.RolUsuario.ADMIN);
-        admin.setActivo(true);
+    private void inicializarOActualizarUsuarios() {
+        // Crear o actualizar usuarios de ejemplo para desarrollo
+        // NOTA: Estas contraseñas solo se usan en perfil 'dev'
+        // En producción, este componente está deshabilitado
+        
+        // Admin
+        Usuario admin = usuarioRepository.findByEmail("admin@picadito.com")
+                .orElse(new Usuario());
+        
+        if (admin.getId() == null) {
+            // Usuario no existe, crear nuevo
+            admin.setNombre("Admin");
+            admin.setEmail("admin@picadito.com");
+            admin.setRol(Usuario.RolUsuario.ADMIN);
+            admin.setActivo(true);
+        }
+        // Actualizar contraseña siempre (por si cambió en las propiedades)
+        admin.setPassword(passwordEncoder.encode(adminPassword));
         usuarioRepository.save(admin);
         
-        Usuario cliente = new Usuario();
-        cliente.setNombre("Cliente Demo");
-        cliente.setEmail("cliente@picadito.com");
-        cliente.setPassword(passwordEncoder.encode("cliente123"));
-        cliente.setRol(Usuario.RolUsuario.CLIENTE);
-        cliente.setActivo(true);
+        // Cliente
+        Usuario cliente = usuarioRepository.findByEmail("cliente@picadito.com")
+                .orElse(new Usuario());
+        
+        if (cliente.getId() == null) {
+            // Usuario no existe, crear nuevo
+            cliente.setNombre("Cliente Demo");
+            cliente.setEmail("cliente@picadito.com");
+            cliente.setRol(Usuario.RolUsuario.CLIENTE);
+            cliente.setActivo(true);
+        }
+        // Actualizar contraseña siempre (por si cambió en las propiedades)
+        cliente.setPassword(passwordEncoder.encode(clientePassword));
         usuarioRepository.save(cliente);
     }
 
