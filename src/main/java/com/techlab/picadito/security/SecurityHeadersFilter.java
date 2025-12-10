@@ -36,13 +36,14 @@ public class SecurityHeadersFilter extends OncePerRequestFilter {
         response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
         
         // Content Security Policy (ajustar según necesidades)
+        // Nota: connect-src permite conexiones al backend desde el frontend
         response.setHeader("Content-Security-Policy", 
             "default-src 'self'; " +
             "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
             "style-src 'self' 'unsafe-inline'; " +
             "img-src 'self' data: https:; " +
             "font-src 'self' data:; " +
-            "connect-src 'self'"
+            "connect-src 'self' https://picadito-backend.onrender.com https://unpicadito.vercel.app"
         );
         
         // Permissions Policy

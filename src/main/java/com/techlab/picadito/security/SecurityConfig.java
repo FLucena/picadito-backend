@@ -54,6 +54,8 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
+                        // Permitir peticiones OPTIONS (preflight) para CORS
+                        .requestMatchers("OPTIONS", "/**").permitAll()
                         // Endpoints públicos (deben ir ANTES de las reglas generales)
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()

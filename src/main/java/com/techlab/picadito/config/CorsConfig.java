@@ -2,14 +2,14 @@ package com.techlab.picadito.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
 import java.util.Arrays;
 
-@Configuration
+// Deshabilitado: Spring Security ya maneja CORS a través de SecurityConfig
+// @Configuration
 public class CorsConfig {
     
     @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:5173,http://127.0.0.1:5173,https://unpicadito.vercel.app}")
