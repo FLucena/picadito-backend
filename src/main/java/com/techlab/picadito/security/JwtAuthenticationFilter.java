@@ -33,31 +33,52 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
         final String authHeader = request.getHeader("Authorization");
-        final String jwt;
-        final String userEmail;
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        jwt = authHeader.substring(7);
-        userEmail = jwtService.extractUsername(jwt);
+        try {
+            final String jwt = authHeader.substring(7);
+            final String userEmail;
 
-        if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
-            if (jwtService.validateToken(jwt, userDetails)) {
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        userDetails.getAuthorities()
-                );
-                authToken.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request)
-                );
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+            // Extract username from token - may throw exception if token is malformed
+            try {
+                userEmail = jwtService.extractUsername(jwt);
+            } catch (Exception e) {
+                // Invalid token format - continue filter chain without authentication
+                filterChain.doFilter(request, response);
+                return;
             }
+
+            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                try {
+                    UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+                    if (jwtService.validateToken(jwt, userDetails)) {
+                        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities()
+                        );
+                        authToken.setDetails(
+                                new WebAuthenticationDetailsSource().buildDetails(request)
+                        );
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                    }
+                } catch (Exception e) {
+                    // User not found or other error - continue filter chain without authentication
+                    // Security will handle unauthorized access later
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+            }
+        } catch (Exception e) {
+            // Any other unexpected error - continue filter chain
+            filterChain.doFilter(request, response);
+            return;
         }
+
         filterChain.doFilter(request, response);
     }
 }

@@ -32,11 +32,20 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsService userDetailsService;
     private final CorrelationIdFilter correlationIdFilter;
+    private final SecurityHeadersFilter securityHeadersFilter;
+    private final RateLimitingFilter rateLimitingFilter;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter, UserDetailsService userDetailsService, CorrelationIdFilter correlationIdFilter) {
+    public SecurityConfig(
+            JwtAuthenticationFilter jwtAuthFilter,
+            UserDetailsService userDetailsService,
+            CorrelationIdFilter correlationIdFilter,
+            SecurityHeadersFilter securityHeadersFilter,
+            RateLimitingFilter rateLimitingFilter) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.userDetailsService = userDetailsService;
         this.correlationIdFilter = correlationIdFilter;
+        this.securityHeadersFilter = securityHeadersFilter;
+        this.rateLimitingFilter = rateLimitingFilter;
     }
 
     @Bean
@@ -79,6 +88,8 @@ public class SecurityConfig {
                 )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(correlationIdFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(securityHeadersFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -162,6 +164,25 @@ public class GlobalExceptionHandler {
                 request.getDescription(false).replace("uri=", "")
         );
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorResponseDTO> handleAuthenticationException(
+            AuthenticationException ex, WebRequest request) {
+        logger.warn("Authentication exception: {}", ex.getMessage());
+        String message = "Credenciales inválidas";
+        if (ex instanceof BadCredentialsException) {
+            message = "Credenciales inválidas";
+        } else {
+            message = ex.getMessage() != null ? ex.getMessage() : "Error de autenticación";
+        }
+        ErrorResponseDTO error = buildErrorResponse(
+                HttpStatus.UNAUTHORIZED.value(),
+                "Unauthorized",
+                message,
+                request.getDescription(false).replace("uri=", "")
+        );
+        return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
     }
 
     @ExceptionHandler(Exception.class)

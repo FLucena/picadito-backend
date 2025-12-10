@@ -126,6 +126,20 @@
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-crypto</artifactId>
 		</dependency>
+
+		<!-- Bucket4j para Rate Limiting -->
+		<dependency>
+			<groupId>com.bucket4j</groupId>
+			<artifactId>bucket4j-core</artifactId>
+			<version>8.10.1</version>
+		</dependency>
+
+		<!-- Bucket4j Spring Boot Starter -->
+		<dependency>
+			<groupId>com.bucket4j</groupId>
+			<artifactId>bucket4j-spring-boot-starter</artifactId>
+			<version>0.3.0</version>
+		</dependency>
 	</dependencies>
 
 	<build>
