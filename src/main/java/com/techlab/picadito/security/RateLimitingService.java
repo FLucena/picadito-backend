@@ -2,7 +2,6 @@ package com.techlab.picadito.security;
 
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
-import io.github.bucket4j.Refill;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -29,19 +28,16 @@ public class RateLimitingService {
     
     // Configuración: 3 registros por hora por IP
     private static final int REGISTERS_PER_HOUR = 3;
-    
-    // Configuración: 10 requests por minuto para otros endpoints de auth
-    private static final int AUTH_REQUESTS_PER_MINUTE = 10;
 
     /**
      * Obtiene o crea un bucket para rate limiting de login por IP
      */
     public Bucket getLoginBucket(String ipAddress) {
         return authBuckets.computeIfAbsent(ipAddress, k -> {
-            Bandwidth limit = Bandwidth.classic(
-                LOGIN_ATTEMPTS_PER_MINUTE,
-                Refill.intervally(LOGIN_ATTEMPTS_PER_MINUTE, Duration.ofMinutes(1))
-            );
+            Bandwidth limit = Bandwidth.builder()
+                .capacity(LOGIN_ATTEMPTS_PER_MINUTE)
+                .refillIntervally(LOGIN_ATTEMPTS_PER_MINUTE, Duration.ofMinutes(1))
+                .build();
             return Bucket.builder().addLimit(limit).build();
         });
     }
@@ -51,10 +47,10 @@ public class RateLimitingService {
      */
     public Bucket getRegisterBucket(String ipAddress) {
         return registerBuckets.computeIfAbsent(ipAddress, k -> {
-            Bandwidth limit = Bandwidth.classic(
-                REGISTERS_PER_HOUR,
-                Refill.intervally(REGISTERS_PER_HOUR, Duration.ofHours(1))
-            );
+            Bandwidth limit = Bandwidth.builder()
+                .capacity(REGISTERS_PER_HOUR)
+                .refillIntervally(REGISTERS_PER_HOUR, Duration.ofHours(1))
+                .build();
             return Bucket.builder().addLimit(limit).build();
         });
     }
@@ -64,10 +60,10 @@ public class RateLimitingService {
      */
     public Bucket getLoginAttemptBucket(String email) {
         return loginAttemptBuckets.computeIfAbsent(email.toLowerCase(), k -> {
-            Bandwidth limit = Bandwidth.classic(
-                LOGIN_ATTEMPTS_PER_MINUTE,
-                Refill.intervally(LOGIN_ATTEMPTS_PER_MINUTE, Duration.ofMinutes(1))
-            );
+            Bandwidth limit = Bandwidth.builder()
+                .capacity(LOGIN_ATTEMPTS_PER_MINUTE)
+                .refillIntervally(LOGIN_ATTEMPTS_PER_MINUTE, Duration.ofMinutes(1))
+                .build();
             return Bucket.builder().addLimit(limit).build();
         });
     }

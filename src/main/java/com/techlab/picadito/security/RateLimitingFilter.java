@@ -40,7 +40,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         if (path.startsWith("/api/auth/login")) {
             if (!rateLimitingService.tryConsumeLogin(ipAddress)) {
                 auditService.logRateLimitExceeded("/api/auth/login", ipAddress, "IP");
-                response.setStatus(HttpServletResponse.SC_TOO_MANY_REQUESTS);
+                response.setStatus(429); // HTTP 429 Too Many Requests
                 response.setContentType("application/json");
                 response.getWriter().write(
                     "{\"error\":\"Too Many Requests\",\"message\":\"Demasiados intentos de login. Por favor, intenta más tarde.\",\"status\":429}"
@@ -50,7 +50,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         } else if (path.startsWith("/api/auth/register")) {
             if (!rateLimitingService.tryConsumeRegister(ipAddress)) {
                 auditService.logRateLimitExceeded("/api/auth/register", ipAddress, "IP");
-                response.setStatus(HttpServletResponse.SC_TOO_MANY_REQUESTS);
+                response.setStatus(429); // HTTP 429 Too Many Requests
                 response.setContentType("application/json");
                 response.getWriter().write(
                     "{\"error\":\"Too Many Requests\",\"message\":\"Demasiados intentos de registro. Por favor, intenta más tarde.\",\"status\":429}"
