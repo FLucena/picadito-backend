@@ -133,13 +133,6 @@
 			<artifactId>bucket4j-core</artifactId>
 			<version>8.10.1</version>
 		</dependency>
-
-		<!-- Bucket4j Spring Boot Starter -->
-		<dependency>
-			<groupId>com.giffing.bucket4j.spring.boot.starter</groupId>
-			<artifactId>bucket4j-spring-boot-starter</artifactId>
-			<version>0.12.10</version>
-		</dependency>
 	</dependencies>
 
 	<build>

@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -30,6 +31,7 @@ public class ScheduledTasks {
      * y generar alertas para los participantes
      */
     @Scheduled(fixedRate = 3600000) // Cada hora (3600000 ms)
+    @Transactional(readOnly = true)
     public void verificarPartidosProximos() {
         logger.info("Ejecutando verificación de partidos próximos");
         
@@ -38,10 +40,11 @@ public class ScheduledTasks {
         LocalDateTime en48Horas = ahora.plusHours(48);
         
         // Buscar partidos que están entre 24 y 48 horas en el futuro
-        List<Partido> partidosProximos = partidoRepository.findAll().stream()
-                .filter(p -> p.getEstado() == EstadoPartido.DISPONIBLE || 
-                           p.getEstado() == EstadoPartido.COMPLETO)
-                .filter(p -> p.getFechaHora().isAfter(en24Horas) && 
+        // Usar findAllByOrderByFechaHoraAsc que tiene @EntityGraph para cargar participantes
+        List<Partido> partidosProximos = partidoRepository.findAllByOrderByFechaHoraAsc().stream()
+                .filter(p -> (p.getEstado() == EstadoPartido.DISPONIBLE || 
+                           p.getEstado() == EstadoPartido.COMPLETO) &&
+                           p.getFechaHora().isAfter(en24Horas) && 
                            p.getFechaHora().isBefore(en48Horas))
                 .collect(Collectors.toList());
         
