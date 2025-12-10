@@ -34,6 +34,8 @@ public class ValidationUtil {
 
     /**
      * Sanitiza string para prevenir SQL injection
+     * Nota: Esta función es para uso en búsquedas. Para datos que se guardan en BD,
+     * usar prepared statements en lugar de concatenación de strings.
      */
     public static String sanitizeInput(String input) {
         if (input == null) {
@@ -50,6 +52,7 @@ public class ValidationUtil {
 
     /**
      * Sanitiza string para prevenir XSS
+     * Usa HTML escaping para convertir caracteres peligrosos a entidades HTML
      */
     public static String sanitizeForXSS(String input) {
         if (input == null) {
@@ -60,6 +63,17 @@ public class ValidationUtil {
                 .replace("\"", "&quot;")
                 .replace("'", "&#x27;")
                 .replace("/", "&#x2F;");
+    }
+    
+    /**
+     * Sanitiza string para uso en búsquedas (previene SQL injection y XSS)
+     */
+    public static String sanitizeForSearch(String input) {
+        if (input == null) {
+            return null;
+        }
+        String sanitized = sanitizeInput(input);
+        return sanitizeForXSS(sanitized);
     }
 
     /**

@@ -58,5 +58,13 @@ public class AuthController {
         AuthResponseDTO response = authService.refreshToken(request);
         return ResponseEntity.ok(response);
     }
+    
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestBody(required = false) RefreshTokenRequestDTO refreshTokenRequest) {
+        authService.logout(authHeader, refreshTokenRequest);
+        return ResponseEntity.ok().body(java.util.Map.of("message", "Sesión cerrada exitosamente"));
+    }
 }
 

@@ -21,6 +21,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import com.techlab.picadito.config.CorrelationIdFilter;
+import com.techlab.picadito.config.InputSanitizationFilter;
 
 import java.util.Arrays;
 
@@ -34,22 +35,32 @@ public class SecurityConfig {
     private final CorrelationIdFilter correlationIdFilter;
     private final SecurityHeadersFilter securityHeadersFilter;
     private final RateLimitingFilter rateLimitingFilter;
+    private final InputSanitizationFilter inputSanitizationFilter;
 
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthFilter,
             UserDetailsService userDetailsService,
             CorrelationIdFilter correlationIdFilter,
             SecurityHeadersFilter securityHeadersFilter,
-            RateLimitingFilter rateLimitingFilter) {
+            RateLimitingFilter rateLimitingFilter,
+            InputSanitizationFilter inputSanitizationFilter) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.userDetailsService = userDetailsService;
         this.correlationIdFilter = correlationIdFilter;
         this.securityHeadersFilter = securityHeadersFilter;
         this.rateLimitingFilter = rateLimitingFilter;
+        this.inputSanitizationFilter = inputSanitizationFilter;
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        // CSRF está deshabilitado porque usamos JWT stateless authentication
+        // CSRF protection no es necesaria para APIs REST con tokens stateless
+        // La protección se logra mediante:
+        // 1. JWT tokens en headers (no en cookies)
+        // 2. CORS configurado correctamente
+        // 3. Rate limiting
+        // 4. Validación de tokens
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -90,6 +101,7 @@ public class SecurityConfig {
                 )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(correlationIdFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(inputSanitizationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(securityHeadersFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

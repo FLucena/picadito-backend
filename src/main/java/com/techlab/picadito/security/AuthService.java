@@ -130,6 +130,8 @@ public class AuthService {
             } else {
                 auditService.logFailedLogin(request.getEmail(), ipAddress, "Credenciales inválidas");
             }
+            // Detectar patrones sospechosos
+            auditService.detectSuspiciousPatterns(request.getEmail(), ipAddress);
             throw new BusinessException("Credenciales inválidas");
         }
 
@@ -157,6 +159,8 @@ public class AuthService {
         }
 
         auditService.logSuccessfulLogin(usuario.getEmail(), ipAddress);
+        // Resetear contadores de intentos fallidos después de login exitoso
+        auditService.resetFailedAttempts(usuario.getEmail(), ipAddress);
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(usuario.getEmail());
         String token = jwtService.generateToken(userDetails);
@@ -226,6 +230,22 @@ public class AuthService {
                 .rol(usuario.getRol().name())
                 .message("Token renovado exitosamente")
                 .build();
+    }
+    
+    /**
+     * Revoca tokens (logout)
+     */
+    public void logout(String authHeader, RefreshTokenRequestDTO refreshTokenRequest) {
+        // Revocar access token si está presente
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            jwtService.revokeToken(token);
+        }
+        
+        // Revocar refresh token si está presente
+        if (refreshTokenRequest != null && refreshTokenRequest.getRefreshToken() != null) {
+            jwtService.revokeToken(refreshTokenRequest.getRefreshToken());
+        }
     }
 }
 

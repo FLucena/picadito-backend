@@ -17,7 +17,7 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    @Value("${jwt.secret:MiClaveSecretaSuperSeguraParaJWTTokenGeneration2024}")
+    @Value("${jwt.secret:}")
     private String secretKey;
 
     @Value("${jwt.expiration:86400000}") // 24 horas por defecto
@@ -25,6 +25,18 @@ public class JwtService {
     
     @Value("${jwt.refresh-expiration:604800000}") // 7 días por defecto
     private Long refreshExpiration;
+    
+    @Value("${jwt.issuer:picadito-backend}")
+    private String issuer;
+    
+    @Value("${jwt.audience:picadito-frontend}")
+    private String audience;
+    
+    private final TokenBlacklistService tokenBlacklistService;
+    
+    public JwtService(TokenBlacklistService tokenBlacklistService) {
+        this.tokenBlacklistService = tokenBlacklistService;
+    }
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -42,6 +54,8 @@ public class JwtService {
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
                 .verifyWith(getSigningKey())
+                .requireIssuer(issuer)
+                .requireAudience(audience)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
@@ -69,6 +83,8 @@ public class JwtService {
         return Jwts.builder()
                 .claims(claims)
                 .subject(subject)
+                .issuer(issuer)
+                .audience().add(audience).and()
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSigningKey())
@@ -76,6 +92,11 @@ public class JwtService {
     }
 
     public Boolean validateToken(String token, UserDetails userDetails) {
+        // Verificar si el token está en la blacklist
+        if (tokenBlacklistService.isTokenRevoked(token)) {
+            return false;
+        }
+        
         final String username = extractUsername(token);
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
     }
@@ -90,6 +111,8 @@ public class JwtService {
         return Jwts.builder()
                 .claims(claims)
                 .subject(subject)
+                .issuer(issuer)
+                .audience().add(audience).and()
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + refreshExpiration))
                 .signWith(getSigningKey())
@@ -97,6 +120,11 @@ public class JwtService {
     }
     
     public Boolean validateRefreshToken(String token) {
+        // Verificar si el token está en la blacklist
+        if (tokenBlacklistService.isTokenRevoked(token)) {
+            return false;
+        }
+        
         try {
             Claims claims = extractAllClaims(token);
             String type = claims.get("type", String.class);
@@ -104,6 +132,13 @@ public class JwtService {
         } catch (Exception e) {
             return false;
         }
+    }
+    
+    /**
+     * Revoca un token agregándolo a la blacklist
+     */
+    public void revokeToken(String token) {
+        tokenBlacklistService.revokeToken(token);
     }
 }
 

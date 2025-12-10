@@ -1,20 +1,36 @@
 # MySQL Database Configuration (Production)
 # Copy this file to application-prod.properties and update with your MySQL connection details
-spring.datasource.url=jdbc:mysql://localhost:3306/picadito_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+# IMPORTANTE: En producción, usar variables de entorno para credenciales:
+# - DB_URL
+# - DB_USERNAME
+# - DB_PASSWORD
+
+# URL de conexión con SSL habilitado (recomendado para producción)
+# useSSL=true requiere certificados SSL válidos
+# requireSSL=true fuerza conexión SSL (más seguro)
+# verifyServerCertificate=true verifica el certificado del servidor
+spring.datasource.url=${DB_URL:jdbc:mysql://localhost:3306/picadito_db?useSSL=true&requireSSL=true&verifyServerCertificate=true&serverTimezone=UTC&useUnicode=true&characterEncoding=utf8}
 spring.datasource.driverClassName=com.mysql.cj.jdbc.Driver
-spring.datasource.username=root
-spring.datasource.password=YOUR_MYSQL_PASSWORD_HERE
+spring.datasource.username=${DB_USERNAME:root}
+spring.datasource.password=${DB_PASSWORD:YOUR_MYSQL_PASSWORD_HERE}
 
 # JPA/Hibernate Configuration
 spring.jpa.database-platform=org.hibernate.dialect.MySQLDialect
-spring.jpa.hibernate.ddl-auto=update
+spring.jpa.hibernate.ddl-auto=validate
 spring.jpa.show-sql=false
 spring.jpa.properties.hibernate.format_sql=false
 
 # Connection Pool Settings (Production)
+# Ajustar según carga esperada
 spring.datasource.hikari.maximum-pool-size=10
 spring.datasource.hikari.minimum-idle=5
 spring.datasource.hikari.connection-timeout=20000
 spring.datasource.hikari.idle-timeout=300000
 spring.datasource.hikari.max-lifetime=600000
+spring.datasource.hikari.leak-detection-threshold=60000
+
+# PostgreSQL Configuration (Alternative - for Render.com)
+# spring.datasource.url=${DATABASE_URL:jdbc:postgresql://localhost:5432/picadito_db?sslmode=require}
+# spring.datasource.driverClassName=org.postgresql.Driver
+# spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
 
